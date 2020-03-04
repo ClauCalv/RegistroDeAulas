@@ -15,7 +15,6 @@ import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.views.activities.OpenAudioActivity;
 import br.ufabc.gravador.views.activities.RecordAudioActivity;
-import br.ufabc.gravador.views.activities.SaveGravacaoActivity;
 
 public class NotificationHelper {
 
@@ -38,7 +37,7 @@ public class NotificationHelper {
     }
 
     public PendingIntent buildSavePendingIntent () {
-        Intent intent = new Intent(context, SaveGravacaoActivity.class);
+        Intent intent = new Intent(context, RecordAudioActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return PendingIntent.getActivity(context, SAVE_REQUEST_CODE, intent, NO_FLAG);
     }

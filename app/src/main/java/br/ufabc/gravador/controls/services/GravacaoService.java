@@ -87,7 +87,7 @@ public class GravacaoService extends Service {
     }
 
     public class LocalBinder extends Binder {
-        GravacaoService getService () { return GravacaoService.this; }
+        public GravacaoService getService () { return GravacaoService.this; }
     }
 
     @Override
@@ -128,6 +128,10 @@ public class GravacaoService extends Service {
         stopTimer();
     }
 
+    public int getServiceStatus () {
+        return serviceStatus;
+    }
+
     /*
      * END LIFECYCLE-LOGIC
      */
@@ -138,6 +142,10 @@ public class GravacaoService extends Service {
 
     public void setGravacao ( Gravacao gravacao ) {
         this.gravacao = gravacao;
+    }
+
+    public boolean hasGravacao () {
+        return gravacao != null;
     }
 
     public void prepareGravacaoForRecord ( Gravacao g, int mediaType ) {
