@@ -87,15 +87,22 @@ public class RecordAudioActivity extends AbstractMenuActivity
                                 start);
 
         finishedLabel = findViewById(R.id.finishedLabel);
-        finishedLabel.setVisibility(finished ? View.VISIBLE : View.INVISIBLE);
+        finishedLabel.setVisibility(
+                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ? View.VISIBLE :
+                        View.INVISIBLE);
 
         recordTimeText = findViewById(R.id.recordTimeText);
-        recordTimeText.setVisibility(recording ? View.VISIBLE : View.INVISIBLE);
-    }
-
-    @Override
-    protected RetainedFragment newRetainedFragment () {
-        return new AudioRecordRetainedFragment();
+        recordTimeText.setVisibility(
+                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
+                        serviceStatus == GravacaoService.STATUS_RECORDING ? View.VISIBLE :
+                        View.INVISIBLE);
+        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
+            @Override
+            public void onTimeUpdate ( long time ) {
+                if ( recordTimeText != null )
+                    recordTimeText.setText(Gravacao.formatTime(time));
+            }
+        });
     }
 
     @Override
@@ -103,43 +110,37 @@ public class RecordAudioActivity extends AbstractMenuActivity
         fragment = f;
     }
 
-    public int getGravacaoTime () { return (int) audioFragment.recordTime; }
-
-    @Override
-    public Gravacao getGravacao () {
-        return gravacao;
-    }
-
     void startStopOnClick ( View view ) {
-        if ( !recording ) {
-            if ( audioFragment.startRecording(gravacao, fileManager) ) {
-                audioFragment.startTimer();
-                startStop.setText(stop);
-                recording = !recording;
-            } else {
-                Toast.makeText(this, "Falha em iniciar gravação",
-                        Toast.LENGTH_LONG).show(); //TODO hardcoded
-            }
-        } else if ( !finished ) {
-            audioFragment.stopRecording();
-            audioFragment.stopTimer();
-            startStop.setText(save);
-            finishedLabel.setVisibility(View.VISIBLE);
-            finished = true;
-            gravacao.sucess();
-        } else {
-            gravacao.post();
-            fragment.alertSave(true);
+        if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
+            gravacaoService.prepareGravacaoForRecord(GravacaoService.MEDIATYPE_AUDIO);
+        switch ( gravacaoService.getServiceStatus() ) {
+            case GravacaoService.STATUS_RECORD_PREPARED:
+                if ( gravacaoService.startRecording() )
+                    startStop.setText(stop);
+                else {
+                    Toast.makeText(this, "Falha em iniciar gravação",
+                            Toast.LENGTH_LONG).show(); //TODO hardcoded
+                    gravacaoService.goIdle();
+                }
+                break;
+            case GravacaoService.STATUS_RECORDING:
+                gravacaoService.stopRecording();
+                startStop.setText(save);
+                finishedLabel.setVisibility(View.VISIBLE);
+                break;
+            case GravacaoService.STATUS_WAITING_SAVE:
+                fragment.alertSave(new AnnotationsFragment.annotationSavedListener() {
+                    @Override
+                    public void onAnnotationSaved () {
+                        Intent intent = new Intent(RecordAudioActivity.this,
+                                SaveGravacaoActivity.class);
+                        intent.putExtra("RequestCode", AUDIO_REQUEST);
+                        startActivityForResult(intent, AUDIO_REQUEST);
+                    }
+                });
+                break;
         }
     }
-
-    @Override
-    public void alertSaveReturn () {
-        Intent intent = new Intent(this, SaveGravacaoActivity.class);
-        intent.putExtra("RequestCode", AUDIO_REQUEST);
-        startActivityForResult(intent, AUDIO_REQUEST);
-    }
-
 
     @Override
     public void onBackPressed () {

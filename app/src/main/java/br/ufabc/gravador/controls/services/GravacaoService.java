@@ -26,7 +26,7 @@ public class GravacaoService extends Service {
     public static final String ACTION_PLAY_PAUSE = "ACTION_PLAY_PAUSE", ACTION_NEXT = "ACTION_NEXT", ACTION_PREV = "ACTION_PREV";
     public static final int MEDIATYPE_AUDIO = 1, MEDIATYPE_VIDEO = 2, MEDIATYPE_NULL = 0;
     public static final String AUDIO_EXTENSION = ".3gp", VIDEO_EXTENSION = "??";//TODO video
-    public static final int STATUS_IDLE = 0, STATUS_RECORDING = 1, STATUS_WAITING_SAVE = 2, STATUS_LOADING_SAVING = 3, STATUS_PLAYING = 4, STATUS_PAUSED = 5;
+    public static final int STATUS_IDLE = -1, STATUS_RECORD_PREPARED = 0, STATUS_RECORDING = 1, STATUS_WAITING_SAVE = 2, STATUS_LOADING_SAVING = 3, STATUS_PLAYING = 4, STATUS_PAUSED = 5;
     private static final int NOTIFICATION_ID = 44444;
     private final IBinder binder = new LocalBinder();
 
@@ -70,6 +70,8 @@ public class GravacaoService extends Service {
     }
 
     private void stopTimer () { timeHandler.removeCallbacks(timeRunnable); }
+
+    public long getTime () { return currentTime; }
 
     /*
      * END TIME-LOGIC
@@ -132,6 +134,11 @@ public class GravacaoService extends Service {
         return serviceStatus;
     }
 
+    public void goIdle () {
+        serviceStatus = STATUS_IDLE;
+    }
+
+
     /*
      * END LIFECYCLE-LOGIC
      */
@@ -148,10 +155,10 @@ public class GravacaoService extends Service {
         return gravacao != null;
     }
 
-    public void prepareGravacaoForRecord ( Gravacao g, int mediaType ) {
-        if ( g == null ) return;
+    public void prepareGravacaoForRecord ( int mediaType ) {
+        if ( gravacao == null ) return;
         String location = null, extension = null;
-        switch ( mediaType ) {
+        switch ( currMediaType = mediaType ) {
             case MEDIATYPE_AUDIO:
                 location = fileManager.getDirectory(MyFileManager.AUDIO_DIR).getPath();
                 extension = AUDIO_EXTENSION;
@@ -165,13 +172,18 @@ public class GravacaoService extends Service {
                 throw new IllegalArgumentException("Unexpected mediatype: " + mediaType);
         }
 
-        g.setFileLocation(location);
-        g.setFileName(MyFileManager.newTempName());
-        g.setFileExtension(extension);
+        gravacao.setFileLocation(location);
+        gravacao.setFileName(MyFileManager.newTempName());
+        gravacao.setFileExtension(extension);
+
+        serviceStatus = STATUS_RECORD_PREPARED;
     }
 
-    private boolean startRecording () {
-        if ( gravacao == null ) return false;
+    public boolean startRecording () {
+        if ( getServiceStatus() != STATUS_RECORD_PREPARED )
+            throw new IllegalStateException("recorder not prepared");
+        if ( gravacao == null )
+            return false;
 
         recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
@@ -190,7 +202,7 @@ public class GravacaoService extends Service {
         } catch ( IOException e ) {
             Log.e("AudioRecord", "prepare() failed", e);
             Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG);
-            prepareGravacaoForRecord(gravacao, MEDIATYPE_NULL);
+            prepareGravacaoForRecord(MEDIATYPE_NULL);
             return false;
         }
 

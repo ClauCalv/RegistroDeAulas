@@ -231,7 +231,11 @@ public class AnnotationsFragment extends Fragment {
         annotationTime.setText("00:00");
     }
 
-    public void alertSave ( final boolean alertActivity ) {
+    public interface annotationSavedListener {
+        void onAnnotationSaved ();
+    }
+
+    public void alertSave ( annotationSavedListener listener ) {
         if ( hasTextChanged && selectedID != -1 )
             new AlertDialog.Builder(getContext()).setMessage(
                     "Salvar mudanças na anotação anterior?")
@@ -239,29 +243,17 @@ public class AnnotationsFragment extends Fragment {
                         @Override
                         public void onClick ( DialogInterface dialogInterface, int i ) {
                             if ( i == AlertDialog.BUTTON_POSITIVE ) saveOnClick();
-                            alertSaveReturn(alertActivity);
+                            listener.onAnnotationSaved();
                         }
                     })
                     .setNegativeButton("Descartar", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick ( DialogInterface dialogInterface, int i ) {
-                            alertSaveReturn(alertActivity);
+                            listener.onAnnotationSaved();
                         }
                     })
                     .show();
-        else alertSaveReturn(alertActivity);
-    }
-
-    public void alertSaveReturn ( boolean alertActivity ) {
-        if ( alertActivity ) {
-            activityListener.alertSaveReturn();
-        } else {
-            String name = "Anotacão " + ( gravacao.getAnnotationCount() + 1 );
-            Gravacao.Annotations a = gravacao.addAnnotation(activityListener.getGravacaoTime(),
-                    name);
-            selectNewAnnotation(a.id);
-            adapter.notifyDataSetChanged();
-        }
+        else listener.onAnnotationSaved();
     }
 
     public void jumpToTime ( int millisec ) {
@@ -332,7 +324,16 @@ public class AnnotationsFragment extends Fragment {
     }
 
     public void newButtonOnClick () {
-        alertSave(false);
+        alertSave(new annotationSavedListener() {
+            @Override
+            public void onAnnotationSaved () {
+                String name = "Anotacão " + ( gravacao.getAnnotationCount() + 1 );
+                Gravacao.Annotations a = gravacao.addAnnotation(activityListener.getGravacaoTime(),
+                        name);
+                selectNewAnnotation(a.id);
+                adapter.notifyDataSetChanged();
+            }
+        });
     }
 
     public void takePictureOnClick () {
@@ -345,8 +346,6 @@ public class AnnotationsFragment extends Fragment {
         int getGravacaoTime ();
 
         void receiveFragment ( AnnotationsFragment f );
-
-        void alertSaveReturn ();
 
         void onAnnotationChanged ( int ID, boolean first );
     }

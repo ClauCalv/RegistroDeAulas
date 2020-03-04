@@ -170,11 +170,6 @@ public class OpenAudioActivity extends AbstractMenuActivity
     }
 
     @Override
-    public void alertSaveReturn () {
-        gravacao.saveGravacao(true, true);
-    }
-
-    @Override
     public void onBackPressed () {
         if ( gravacao == null || !gravacao.isLastSaved() )
             new AlertDialog.Builder(this).setMessage(
@@ -204,7 +199,12 @@ public class OpenAudioActivity extends AbstractMenuActivity
     @Override
     protected void onPause () {
         super.onPause();
-        fragment.alertSave(true);
+        fragment.alertSave(new AnnotationsFragment.annotationSavedListener() {
+            @Override
+            public void onAnnotationSaved () {
+                gravacao.saveGravacao(true, true);
+            }
+        });
         //TODO RELEASE
     }
 
