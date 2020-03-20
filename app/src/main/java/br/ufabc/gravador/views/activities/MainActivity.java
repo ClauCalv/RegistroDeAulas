@@ -15,7 +15,7 @@ public class MainActivity extends AbstractMenuActivity {
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_main, R.id.my_toolbar, false, null);
+        super.onCreate(savedInstanceState, R.layout.activity_main, R.id.my_toolbar, false);
 
         initRecord = findViewById(R.id.initRecord);
         initRecord.setOnClickListener(new View.OnClickListener() {

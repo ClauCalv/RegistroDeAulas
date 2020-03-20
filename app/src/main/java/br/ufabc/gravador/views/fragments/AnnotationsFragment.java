@@ -226,6 +226,10 @@ public class AnnotationsFragment extends Fragment {
         hasTextChanged = false;
     }
 
+    public void updateGravacao () {
+        gravacao = activityListener.getGravacao();
+    }
+
     public void loadNewGravacao () {
         annotationName.setText("Crie uma anotação");
         annotationTime.setText("00:00");
@@ -308,6 +312,8 @@ public class AnnotationsFragment extends Fragment {
     }
 
     public void deleteOnClick () {
+        if ( selectedID == -1 ) return;
+
         final int time = gravacao.getAnnotation(selectedID).getTime();
         gravacao.deleteAnnotation(selectedID);
 
@@ -324,6 +330,8 @@ public class AnnotationsFragment extends Fragment {
     }
 
     public void newButtonOnClick () {
+        if ( gravacao == null ) return;
+
         alertSave(new annotationSavedListener() {
             @Override
             public void onAnnotationSaved () {

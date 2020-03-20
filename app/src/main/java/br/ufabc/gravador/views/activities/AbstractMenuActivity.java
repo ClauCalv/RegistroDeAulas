@@ -5,11 +5,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
 
 import br.ufabc.gravador.R;
 
@@ -18,10 +18,13 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
     protected Toolbar myToolbar;
     protected ActionBar myActionBar;
 
-    protected RetainedFragment dataFragment;
+    @SuppressWarnings( "MissingSuperCall" )
+    @Override
+    protected void onCreate ( @Nullable Bundle savedInstanceState ) {
+        throw new UnsupportedOperationException("DO NOT CALL THIS METHOD!");
+    }
 
-    //@Override
-    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled, String dataFragTAG ) {
+    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled ) {
         super.onCreate(savedInstanceState);
         setContentView(LayoutID);
 
@@ -29,15 +32,7 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
         setSupportActionBar(myToolbar);
         myActionBar = getSupportActionBar();
         myActionBar.setDisplayHomeAsUpEnabled(homeEnabled);
-
-        FragmentManager fm = getSupportFragmentManager();
-        dataFragment = (RetainedFragment) fm.findFragmentByTag(dataFragTAG);
-
-        if ( dataFragment == null ) if ( ( dataFragment = newRetainedFragment() ) != null )
-            fm.beginTransaction().add(dataFragment, dataFragTAG).commit();
     }
-
-    protected RetainedFragment newRetainedFragment () { return null; }
 
     @Override
     public boolean onOptionsItemSelected ( MenuItem item ) {

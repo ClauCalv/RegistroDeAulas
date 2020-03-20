@@ -136,6 +136,7 @@ public class GravacaoService extends Service {
 
     public void goIdle () {
         serviceStatus = STATUS_IDLE;
+        goBackground();
     }
 
 
@@ -155,6 +156,8 @@ public class GravacaoService extends Service {
         return gravacao != null;
     }
 
+    public Gravacao getGravacao () { return gravacao; }
+
     public void prepareGravacaoForRecord ( int mediaType ) {
         if ( gravacao == null ) return;
         String location = null, extension = null;
@@ -172,9 +175,9 @@ public class GravacaoService extends Service {
                 throw new IllegalArgumentException("Unexpected mediatype: " + mediaType);
         }
 
-        gravacao.setFileLocation(location);
-        gravacao.setFileName(MyFileManager.newTempName());
-        gravacao.setFileExtension(extension);
+        gravacao.setRecordLocation(location);
+        gravacao.setRecordName(MyFileManager.newTempName());
+        gravacao.setRecordExtension(extension);
 
         serviceStatus = STATUS_RECORD_PREPARED;
     }
@@ -188,7 +191,7 @@ public class GravacaoService extends Service {
         recorder = new MediaRecorder();
         recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        recorder.setOutputFile(gravacao.getFilePath());
+        recorder.setOutputFile(gravacao.getRecordPath());
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
         recorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
             @Override
@@ -233,11 +236,30 @@ public class GravacaoService extends Service {
         serviceStatus = STATUS_WAITING_SAVE;
     }
 
-    public void saveGravacaoAssync ( boolean record, boolean annotations ) {
+    public interface onGravacaoSavedListener {
+        void onSaved ( boolean success );
+    }
+
+    public void saveGravacaoAssync ( boolean record, boolean annotations, onGravacaoSavedListener l ) {
+        serviceStatus = STATUS_LOADING_SAVING;
         new Handler().post(new Runnable() {
             @Override
             public void run () {
-                gravacao.saveGravacao(record, annotations);
+                l.onSaved(gravacao.saveGravacao(record, annotations));
+                setGravacao(null);
+                goIdle();
+            }
+        });
+    }
+
+    public void renameAndSaveAssync ( String name, onGravacaoSavedListener l ) {
+        serviceStatus = STATUS_LOADING_SAVING;
+        new Handler().post(new Runnable() {
+            @Override
+            public void run () {
+                l.onSaved(gravacao.renameAndSave(name));
+                setGravacao(null);
+                goIdle();
             }
         });
     }
@@ -252,14 +274,14 @@ public class GravacaoService extends Service {
 
     private boolean isPlayerPrepared = false;
 
-    public boolean prepareGravacaoForPlaying ( Gravacao gravacao ) {
+    public boolean prepareGravacaoForPlaying () {
         if ( player == null )
             player = new MediaPlayer();
         else
             player.reset();
 
         try {
-            player.setDataSource(gravacao.getFilePath());
+            player.setDataSource(gravacao.getRecordPath());
             player.setLooping(false);
             player.prepare();
             isPlayerPrepared = true;
@@ -269,6 +291,9 @@ public class GravacaoService extends Service {
             stopPlaying();
             return false;
         }
+
+        serviceStatus = STATUS_PAUSED;
+
         return true;
     }
 
@@ -379,7 +404,7 @@ public class GravacaoService extends Service {
     }
 
     private void goBackground () {
-        notificationHelper.clearNotifications();
+        stopForeground(true);
     }
 
     private void goForeground () {

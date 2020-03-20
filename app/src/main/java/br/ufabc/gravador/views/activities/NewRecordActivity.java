@@ -25,8 +25,7 @@ public class NewRecordActivity extends AbstractMenuActivity {
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_new_record, R.id.my_toolbar, true,
-                null);
+        super.onCreate(savedInstanceState, R.layout.activity_new_record, R.id.my_toolbar, true);
 
         if ( !this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA) )
             recordVideo.setEnabled(false);

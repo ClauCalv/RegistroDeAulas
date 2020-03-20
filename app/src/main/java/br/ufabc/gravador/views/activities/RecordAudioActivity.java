@@ -1,20 +1,15 @@
 package br.ufabc.gravador.views.activities;
 
 import android.annotation.SuppressLint;
-import android.content.ComponentName;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
@@ -26,7 +21,7 @@ import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
 import br.ufabc.gravador.views.fragments.AnnotationsFragment;
 
-public class RecordAudioActivity extends AbstractMenuActivity
+public class RecordAudioActivity extends AbstractServiceActivity
         implements AnnotationsFragment.AnnotationFragmentListener {
 
     public static int AUDIO_REQUEST = 1111, VIDEO_REQUEST = 2222; //    TODO video
@@ -34,43 +29,14 @@ public class RecordAudioActivity extends AbstractMenuActivity
     public final String start = "Iniciar Gravação", stop = "Terminar gravação", save = "Salvar Gravação"; //TODO hardcoded
     private Button startStop;
     private TextView finishedLabel, recordTimeText;
-    //private Gravacao gravacao = null;
+    private Gravacao gravacao = null;
     private AnnotationsFragment fragment = null;
     private MyFileManager fileManager;
-    private GravacaoService gravacaoService;
-    private ServiceConnection serviceConnection;
-    private boolean isBound = false;
 
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_record_audio, R.id.my_toolbar, true,
-                null);
-
-        Intent intent = new Intent(this, GravacaoService.class);
-        startService(intent);
-        serviceConnection = new ServiceConnection() {
-            @Override
-            public void onServiceConnected ( ComponentName className, IBinder binder ) {
-                gravacaoService = ( (GravacaoService.LocalBinder) binder ).getService();
-                isBound = true;
-            }
-
-            @Override
-            public void onServiceDisconnected ( ComponentName arg0 ) {
-                isBound = false;
-            }
-        };
-        bindService(intent, serviceConnection, Context.BIND_ABOVE_CLIENT);
-
-        fileManager = MyFileManager.getInstance();
-        fileManager.setup(getApplicationContext());
-
-        if ( !gravacaoService.hasGravacao() ) {
-            File f = fileManager.getDirectory(MyFileManager.GRAVACAO_DIR);
-            gravacaoService.setGravacao(
-                    Gravacao.CreateEmpty(f.getPath(), MyFileManager.newTempName()));
-        }
+        super.onCreate(savedInstanceState, R.layout.activity_record_audio, R.id.my_toolbar, true);
 
         startStop = findViewById(R.id.startRecording);
         startStop.setOnClickListener(new View.OnClickListener() {
@@ -79,23 +45,28 @@ public class RecordAudioActivity extends AbstractMenuActivity
                 startStopOnClick(view);
             }
         });
-
-        int serviceStatus = gravacaoService.getServiceStatus();
-        startStop.setText(
-                serviceStatus == GravacaoService.STATUS_RECORDING ? stop :
-                        serviceStatus == GravacaoService.STATUS_WAITING_SAVE ? save :
-                                start);
+        startStop.setText(start);
 
         finishedLabel = findViewById(R.id.finishedLabel);
-        finishedLabel.setVisibility(
-                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ? View.VISIBLE :
-                        View.INVISIBLE);
+        finishedLabel.setVisibility(View.INVISIBLE);
 
         recordTimeText = findViewById(R.id.recordTimeText);
-        recordTimeText.setVisibility(
-                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
-                        serviceStatus == GravacaoService.STATUS_RECORDING ? View.VISIBLE :
-                        View.INVISIBLE);
+        recordTimeText.setVisibility(View.INVISIBLE);
+
+    }
+
+    @Override
+    protected void onServiceOnline () {
+        fileManager = MyFileManager.getInstance();
+        fileManager.setup(getApplicationContext());
+
+        if ( !gravacaoService.hasGravacao() ) {
+            File f = fileManager.getDirectory(MyFileManager.GRAVACAO_DIR);
+            gravacao = Gravacao.CreateEmpty(f.getPath(), MyFileManager.newTempName());
+            gravacaoService.setGravacao(gravacao);
+        } else gravacao = gravacaoService.getGravacao();
+        fragment.updateGravacao();
+
         gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
             @Override
             public void onTimeUpdate ( long time ) {
@@ -103,6 +74,25 @@ public class RecordAudioActivity extends AbstractMenuActivity
                     recordTimeText.setText(Gravacao.formatTime(time));
             }
         });
+        updateState();
+    }
+
+    private void updateState () {
+        if ( !isBound ) return;
+
+        int serviceStatus = gravacaoService.getServiceStatus();
+
+        startStop.setText(
+                serviceStatus == GravacaoService.STATUS_RECORDING ? stop :
+                        serviceStatus == GravacaoService.STATUS_WAITING_SAVE ? save :
+                                start);
+        finishedLabel.setVisibility(
+                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ? View.VISIBLE :
+                        View.INVISIBLE);
+        recordTimeText.setVisibility(
+                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
+                        serviceStatus == GravacaoService.STATUS_RECORDING ? View.VISIBLE :
+                        View.INVISIBLE);
     }
 
     @Override
@@ -110,14 +100,22 @@ public class RecordAudioActivity extends AbstractMenuActivity
         fragment = f;
     }
 
+    @Override
+    public Gravacao getGravacao () { return gravacao; }
+
+    @Override
+    public int getGravacaoTime () {
+        return isBound ? (int) gravacaoService.getTime() : 0;
+    }
+
     void startStopOnClick ( View view ) {
+        if ( !isBound ) return;
+
         if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
             gravacaoService.prepareGravacaoForRecord(GravacaoService.MEDIATYPE_AUDIO);
         switch ( gravacaoService.getServiceStatus() ) {
             case GravacaoService.STATUS_RECORD_PREPARED:
-                if ( gravacaoService.startRecording() )
-                    startStop.setText(stop);
-                else {
+                if ( !gravacaoService.startRecording() ) {
                     Toast.makeText(this, "Falha em iniciar gravação",
                             Toast.LENGTH_LONG).show(); //TODO hardcoded
                     gravacaoService.goIdle();
@@ -125,8 +123,6 @@ public class RecordAudioActivity extends AbstractMenuActivity
                 break;
             case GravacaoService.STATUS_RECORDING:
                 gravacaoService.stopRecording();
-                startStop.setText(save);
-                finishedLabel.setVisibility(View.VISIBLE);
                 break;
             case GravacaoService.STATUS_WAITING_SAVE:
                 fragment.alertSave(new AnnotationsFragment.annotationSavedListener() {
@@ -140,6 +136,8 @@ public class RecordAudioActivity extends AbstractMenuActivity
                 });
                 break;
         }
+
+        updateState();
     }
 
     @Override
@@ -181,106 +179,12 @@ public class RecordAudioActivity extends AbstractMenuActivity
     }
 
     @Override
-    protected void onPause () {
-        super.onPause();
-        //TODO RELEASE
-    }
-    @Override
     protected void onDestroy () {
         super.onDestroy();
         gravacao.abortIfFailed();
     }
 
     @Override
-    public void onSaveInstanceState ( @NonNull Bundle outState ) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean("recording", recording);
-        outState.putBoolean("finished", finished);
-        gravacao.post();
-    }
-
-    @Override
     public void onAnnotationChanged ( int ID, boolean f ) { }
-
-    //    public static class AudioRecordRetainedFragment extends AbstractMenuActivity.RetainedFragment {
-    //
-    //        public static String TAG = "AudioRecordRetainedFragment";
-    //
-    //        // --- AUDIO RECORD ---
-    //        private MediaRecorder recorder = null;
-    //        // --- TIME ---
-    //        private Handler timeHandler = new Handler();
-    //        private long recordTime = 0, startTime = 0;
-    //        // --- END AUDIO RECORD ---
-    //        private Runnable timeRunnable = new Runnable() {
-    //            @Override
-    //            public void run () {
-    //                recordTime = SystemClock.uptimeMillis() - startTime;
-    //                timeHandler.postDelayed(this, 500);
-    //                Activity a = getActivity();
-    //                if ( a != null ) {
-    //                    TextView t = ( (RecordAudioActivity) a ).recordTimeText;
-    //                    if ( t != null )
-    //                        t.setText(Gravacao.formatTime(recordTime));
-    //                }
-    //            }
-    //        };
-    //
-    //        private boolean startRecording ( Gravacao gravacao, MyFileManager fileManager ) {
-    //            gravacao.setFileLocation(fileManager.getDirectory(MyFileManager.AUDIO_DIR).getPath());
-    //            gravacao.setFileName(MyFileManager.newTempName());
-    //            gravacao.setFileExtension(".3gp");
-    //
-    //            recorder = new MediaRecorder();
-    //            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-    //            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-    //            recorder.setOutputFile(gravacao.getFilePath());
-    //            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-    //            recorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
-    //                @Override
-    //                public void onError ( MediaRecorder mr, int what, int extra ) {
-    //                    Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra);
-    //                }
-    //            });
-    //
-    //            try {
-    //                recorder.prepare();
-    //            } catch ( IOException e ) {
-    //                Log.e("AudioRecord", "prepare() failed", e);
-    //                Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG);
-    //                gravacao.setFileLocation(null);
-    //                gravacao.setFileName(null);
-    //                gravacao.setFileExtension(null);
-    //                return false;
-    //            }
-    //
-    //            recorder.start();
-    //            return true;
-    //        }
-    //
-    //        private void stopRecording () {
-    //            recorder.stop();
-    //            recorder.release();
-    //            recorder = null;
-    //        }
-    //
-    //        void startTimer () {
-    //            startTime = SystemClock.uptimeMillis();
-    //            timeHandler.postDelayed(timeRunnable, 0);
-    //            Activity a = getActivity();
-    //            if ( a != null ) ( (RecordAudioActivity) a ).recordTimeText.setVisibility(View.VISIBLE);
-    //        }
-    //
-    //        void stopTimer () { timeHandler.removeCallbacks(timeRunnable); }
-    //
-    //        // --- END TIME ---
-    //
-    //        @Override
-    //        public void onDestroy () {
-    //            super.onDestroy();
-    //            if ( recorder != null ) stopRecording();
-    //            if ( timeHandler != null ) stopTimer();
-    //        }
-    //    }
 
 }

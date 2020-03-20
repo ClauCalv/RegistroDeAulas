@@ -23,7 +23,7 @@ import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.helpers.MyFileManager;
 import br.ufabc.gravador.models.Gravacao;
 
-public class ViewGravacoesActivity extends AbstractMenuActivity {
+public class ViewGravacoesActivity extends AbstractServiceActivity {
 
     public static String loading = "Recuperando Gravações", loaded = "Gravações existentes:";
     private MyFileManager fileManager;
@@ -44,8 +44,8 @@ public class ViewGravacoesActivity extends AbstractMenuActivity {
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_view_recordings, R.id.my_toolbar, true,
-                null);
+        super.onCreate(savedInstanceState, R.layout.activity_view_recordings, R.id.my_toolbar,
+                true);
 
         fileManager = MyFileManager.getInstance();
         fileManager.setup(getApplicationContext());
@@ -90,6 +90,10 @@ public class ViewGravacoesActivity extends AbstractMenuActivity {
             }
         });
 
+    }
+
+    @Override
+    protected void onServiceOnline () {
         loadHandler = new Handler();
         loadHandler.postDelayed(loadRunnable, 0);
     }
@@ -103,7 +107,7 @@ public class ViewGravacoesActivity extends AbstractMenuActivity {
 
     public void selectGravacao ( int position ) {
         Gravacao g = gravacaos.get(position);
-        g.post();
+        gravacaoService.setGravacao(g);
         Log.i("SELECTED", position + ": " + g.getName());
         Intent intent = new Intent(this, OpenGravacaoActivity.class);
         startActivity(intent);
@@ -113,13 +117,13 @@ public class ViewGravacoesActivity extends AbstractMenuActivity {
         List<File> files = fileManager.listFiles(MyFileManager.GRAVACAO_DIR, new FilenameFilter() {
             @Override
             public boolean accept ( File file, String s ) {
-                return s.endsWith(Gravacao.extension());
+                return s.endsWith(Gravacao.annotationExtension);
             }
         });
         gravacaos = new ArrayList<Gravacao>();
         for ( File f : files ) {
             Gravacao g = Gravacao.LoadFromFile(f.getParent(),
-                    f.getName().split(Gravacao.extension())[0]);
+                    f.getName().split(Gravacao.annotationExtension)[0]);
             if ( g == null ) continue;
             gravacaos.add(g);
         }

@@ -5,6 +5,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaMetadataRetriever;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -15,7 +16,7 @@ import java.io.File;
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.models.Gravacao;
 
-public class OpenGravacaoActivity extends AbstractMenuActivity {
+public class OpenGravacaoActivity extends AbstractServiceActivity {
 
     public final String REMOVE = "Remover gravacão do registro", ANNEX = "Anexar gravação ao registro"; //TODO hardcoded
     private Button changeRecord, playRecord, deleteGravacao;
@@ -26,15 +27,7 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_open_gravacao, R.id.my_toolbar, true,
-                null);
-
-        gravacao = Gravacao.postedInstance;
-        if ( gravacao == null ) {
-            Toast.makeText(this, "Erro em abrir gravação", Toast.LENGTH_LONG).show();
-            finish();
-            return;
-        }
+        super.onCreate(savedInstanceState, R.layout.activity_open_gravacao, R.id.my_toolbar, true);
 
         changeRecord = findViewById(R.id.changeRecord);
         changeRecord.setOnClickListener(new View.OnClickListener() {
@@ -43,6 +36,7 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
                 changeRecordOnClick(view);
             }
         });
+        changeRecord.setText(REMOVE);
 
         playRecord = findViewById(R.id.playRecord);
         playRecord.setOnClickListener(new View.OnClickListener() {
@@ -51,6 +45,7 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
                 playRecordOnClick(view);
             }
         });
+        playRecord.setEnabled(false);
 
         deleteGravacao = findViewById(R.id.deleteGravacao);
         deleteGravacao.setOnClickListener(new View.OnClickListener() {
@@ -59,31 +54,43 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
                 deleteGravacaoOnClick(view);
             }
         });
+    }
 
+    @Override
+    protected void onServiceOnline () {
+        if ( !gravacaoService.hasGravacao() ) {
+            finish();
+            Toast.makeText(this, "Erro em abrir gravação", Toast.LENGTH_LONG).show();
+            return;
+        } else gravacao = gravacaoService.getGravacao();
         updateRecordState();
     }
 
     public void updateRecordState () {
-        if ( gravacao != null ) {
-            hasRecord = gravacao.hasRecord();
-            hasAnnotation = gravacao.hasAnnotation();
-        }
+        if ( !isBound ) return;
+        hasRecord = gravacao.hasRecord();
+        hasAnnotation = gravacao.hasAnnotation();
+
         if ( changeRecord != null ) changeRecord.setText(hasRecord ? REMOVE : ANNEX);
         if ( playRecord != null ) playRecord.setEnabled(hasRecord || hasAnnotation);
     }
 
     public void removeRecord () {
+        if ( !isBound ) return;
         gravacao.removeRecord();
         updateRecordState();
     }
 
     public void deleteAndQuit () {
+        if ( !isBound ) return;
         File f = new File(gravacao.getAnnotationPath());
         f.delete();
         finish();
     }
 
     void changeRecordOnClick ( View view ) {
+        if ( !isBound ) return;
+
         if ( hasRecord ) {
             new AlertDialog.Builder(this)
                     .setMessage("Remover gravação? Não poderá desfazer esta ação")
@@ -95,15 +102,20 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
                     }).setNegativeButton("Não", null).show();
         } else {
             //TODO findFileToAnnex
+            Toast.makeText(null, "Não implementado ainda", Toast.LENGTH_LONG).show();
         }
     }
 
     void playRecordOnClick ( View view ) {
+        if ( !isBound ) return;
+
         String mimetype = null, duration = "";
 
         if ( hasRecord ) {
+            MediaScannerConnection.scanFile(this, new String[]{gravacao.getRecordPath()}, null,
+                    null);
             MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            mmr.setDataSource(gravacao.getFilePath());
+            mmr.setDataSource(gravacao.getRecordPath());
             mimetype = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
             duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
             mmr.release();
@@ -132,6 +144,8 @@ public class OpenGravacaoActivity extends AbstractMenuActivity {
     }
 
     void deleteGravacaoOnClick ( View view ) {
+        if ( !isBound ) return;
+
         new AlertDialog.Builder(this).setMessage("Deletar registro? Não poderá desfazer esta ação")
                 .setPositiveButton("Sim", new DialogInterface.OnClickListener() {
                     @Override

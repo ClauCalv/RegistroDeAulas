@@ -21,10 +21,9 @@ import java.util.Locale;
 
 public class Gravacao {
 
-    private static final String annotationExtension = ".grv.xml";
-    public static Gravacao postedInstance;
-    private String fileLocation, fileName, fileExtension, annotationLocation, annotationName;
-    private boolean saveRecord, saveAnnotations;
+    public static final String annotationExtension = ".grv.xml";
+    private String recordLocation, recordName, recordExtension, annotationLocation, annotationName;
+    private boolean saveRecord = true, saveAnnotations = true;
     private SparseArray<Annotations> annotations;
     private boolean lastSaved, failed;
     private int lastAnnotationID = 0;
@@ -34,8 +33,6 @@ public class Gravacao {
         this.annotationLocation = annotationLocation;
         this.annotationName = annotationName;
     }
-
-    public static String extension () { return annotationExtension; }
 
     public static String formatTime ( long time ) {
         long hh = time / ( 1000 * 60 * 60 ), mm = time / ( 1000 * 60 ) % 60, ss = time / 1000 % 60;
@@ -67,13 +64,13 @@ public class Gravacao {
             while ( eventType != XmlPullParser.END_DOCUMENT ) {
                 if ( eventType == XmlPullParser.START_TAG ) {
                     if ( parser.getName().equals("Record") ) {
-                        gravacao.fileExtension = parser.getAttributeValue(null, "Extension");
+                        gravacao.recordExtension = parser.getAttributeValue(null, "Extension");
                         if ( parser.next() == XmlPullParser.TEXT ) {
                             String text = parser.getText();
-                            text = text.replace(gravacao.fileExtension, "");
+                            text = text.replace(gravacao.recordExtension, "");
                             int aux = text.lastIndexOf(File.separatorChar) + 1;
-                            gravacao.fileLocation = text.substring(0, aux);
-                            gravacao.fileName = text.substring(aux);
+                            gravacao.recordLocation = text.substring(0, aux);
+                            gravacao.recordName = text.substring(aux);
                         }
                     } else if ( parser.getName().equals("Annotation") ) {
                         int id = Integer.valueOf(parser.getAttributeValue(null, "ID"));
@@ -112,33 +109,29 @@ public class Gravacao {
         return gravacao;
     }
 
-    public void post () {
-        postedInstance = this;
-    }
-
     public String getName () {
         return annotationName;
     }
 
-    public void setFileLocation ( String fileLocation ) {
-        this.fileLocation = fileLocation;
+    public void setRecordLocation ( String recordLocation ) {
+        this.recordLocation = recordLocation;
     }
 
-    public void setFileExtension ( String fileExtension ) {
-        this.fileExtension = fileExtension;
+    public void setRecordExtension ( String recordExtension ) {
+        this.recordExtension = recordExtension;
     }
 
-    public String getFileName () {
-        return fileName;
+    public String getRecordName () {
+        return recordName;
     }
 
-    public void setFileName ( String fileName ) {
-        this.fileName = fileName;
+    public void setRecordName ( String recordName ) {
+        this.recordName = recordName;
         lastSaved = false;
     }
 
-    public String getFilePath () {
-        return new File(fileLocation, fileName + fileExtension).getAbsolutePath();
+    public String getRecordPath () {
+        return new File(recordLocation, recordName + recordExtension).getAbsolutePath();
     }
 
     public String getAnnotationPath () {
@@ -155,26 +148,26 @@ public class Gravacao {
     }
 
     public boolean hasRecord () {
-        return fileExtension != null && fileName != null;
+        return recordExtension != null && recordName != null;
     }
 
     public int getAnnotationCount () {
         return annotations.size();
     }
 
-    public boolean renameAndSaveUnsafe ( String annotationName ) {
+    public boolean renameAndSave ( String annotationName ) {
         File target = new File(getAnnotationPath());
         if ( target.exists() ) return false;
         this.annotationName = annotationName;
-        saveGravacaoUnsafe();
+        saveGravacaoByLastMode();
         return true;
     }
 
     public void removeRecord () {
         saveMode(false, true);
-        fileName = null;
-        fileExtension = null;
-        saveGravacaoUnsafe();
+        recordName = null;
+        recordExtension = null;
+        saveGravacaoByLastMode();
     }
 
     public void sucess () {
@@ -182,15 +175,15 @@ public class Gravacao {
     }
 
     public void abortIfFailed () {
-        if ( failed ) new File(getFilePath()).delete();
+        if ( failed ) new File(getRecordPath()).delete();
     }
 
-    public void saveGravacao ( boolean record, boolean annotations ) {
+    public boolean saveGravacao ( boolean record, boolean annotations ) {
         saveMode(record, annotations);
-        saveGravacaoUnsafe();
+        return saveGravacaoByLastMode();
     }
 
-    public void saveGravacaoUnsafe () {
+    public boolean saveGravacaoByLastMode () {
         try {
             File outputFile = new File(getAnnotationPath());
             FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
@@ -203,8 +196,8 @@ public class Gravacao {
 
             if ( saveRecord && hasRecord() ) {
                 xmlSerializer.startTag(null, "Record");
-                xmlSerializer.attribute(null, "Extension", fileExtension);
-                xmlSerializer.text(getFilePath());
+                xmlSerializer.attribute(null, "Extension", recordExtension);
+                xmlSerializer.text(getRecordPath());
                 xmlSerializer.endTag(null, "Record");
             }
 
@@ -224,6 +217,8 @@ public class Gravacao {
             fileOutputStream.close();
 
             saveRecord = saveAnnotations = true;
+            sucess();
+            lastSaved = true;
 
         } catch ( IllegalArgumentException | IllegalStateException e ) {
             Log.e("xml", "XML malformed", e);
@@ -231,7 +226,7 @@ public class Gravacao {
             Log.e("xml", "IO Exception", e);
         }
 
-        lastSaved = true;
+        return false;
     }
 
     public boolean isLastSaved () {

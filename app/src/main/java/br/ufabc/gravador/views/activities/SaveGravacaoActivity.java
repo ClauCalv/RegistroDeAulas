@@ -4,38 +4,28 @@ import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
-import android.os.PersistableBundle;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.models.Gravacao;
 
-public class SaveGravacaoActivity extends AbstractMenuActivity {
+public class SaveGravacaoActivity extends AbstractServiceActivity {
 
-    Button saveAll, saveRecord, saveAnnotations, saveNone;
-    int requestCode;
-    Gravacao gravacao;
+    private Button saveAll, saveRecord, saveAnnotations, saveNone;
+    private int requestCode = 9510;
+    private Gravacao gravacao;
 
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_save_recordings, R.id.my_toolbar, true,
-                null);
-
-        Bundle extras = getIntent().getExtras();
-        if ( extras != null ) {
-            gravacao = Gravacao.postedInstance;
-            requestCode = extras.getInt("RequestCode");
-        } else if ( savedInstanceState != null ) {
-            gravacao = Gravacao.postedInstance;
-            requestCode = savedInstanceState.getInt("RequestCode");
-        } else finish();
+        super.onCreate(savedInstanceState, R.layout.activity_save_recordings, R.id.my_toolbar,
+                true);
 
         saveAll = findViewById(R.id.saveAll);
         saveAll.setOnClickListener(new View.OnClickListener() {
@@ -71,14 +61,12 @@ public class SaveGravacaoActivity extends AbstractMenuActivity {
     }
 
     @Override
-    public void onSaveInstanceState ( @NonNull Bundle outState, @NonNull PersistableBundle outPersistentState ) {
-        super.onSaveInstanceState(outState, outPersistentState);
-        outState.putInt("RequestCode", requestCode);
-    }
-
-    @Override
-    protected void onRestoreInstanceState ( @NonNull Bundle savedInstanceState ) {
-        super.onRestoreInstanceState(savedInstanceState);
+    protected void onServiceOnline () {
+        if ( !gravacaoService.hasGravacao() ) {
+            finish();
+            Toast.makeText(this, "Falha ao abrir gravação", Toast.LENGTH_LONG).show();
+            return;
+        } else gravacao = gravacaoService.getGravacao();
     }
 
     void saveAllOnClick ( View view ) {
@@ -86,6 +74,8 @@ public class SaveGravacaoActivity extends AbstractMenuActivity {
     }
 
     private void saveFile ( boolean record, boolean annotation ) {
+        if ( !isBound ) return;
+
         gravacao.saveMode(record, annotation);
         Intent intent = new Intent(this, NameToSaveActivity.class);
         intent.putExtra("RequestCode", requestCode);

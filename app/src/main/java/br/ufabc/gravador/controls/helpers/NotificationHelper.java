@@ -58,8 +58,8 @@ public class NotificationHelper {
         NotificationManagerCompat.from(context).notify(ID, notification);
     }
 
-    public void clearNotifications () {
-        NotificationManagerCompat.from(context).cancelAll();
+    public void clearNotifications ( int ID ) {
+        NotificationManagerCompat.from(context).cancel(ID);
     }
 
     public Notification newSaveNotification ( PendingIntent pendingIntent ) {

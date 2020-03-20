@@ -11,26 +11,19 @@ import android.widget.Toast;
 import java.util.regex.Pattern;
 
 import br.ufabc.gravador.R;
+import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
 
-public class NameToSaveActivity extends AbstractMenuActivity {
+public class NameToSaveActivity extends AbstractServiceActivity {
 
-    Button saveRecordName;
-    TextView recordName;
-    Gravacao gravacao;
-    int requestCode;
+    private Button saveRecordName;
+    private TextView recordName;
+    private Gravacao gravacao;
 
     @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_name_to_save, R.id.my_toolbar, true,
-                null);
-
-        Bundle extras = getIntent().getExtras();
-        if ( extras != null ) {
-            gravacao = Gravacao.postedInstance;
-            requestCode = extras.getInt("RequestCode");
-        }
+        super.onCreate(savedInstanceState, R.layout.activity_name_to_save, R.id.my_toolbar, true);
 
         saveRecordName = findViewById(R.id.saveRecordName);
         saveRecordName.setOnClickListener(new View.OnClickListener() {
@@ -41,24 +34,44 @@ public class NameToSaveActivity extends AbstractMenuActivity {
         });
 
         recordName = findViewById(R.id.recordName);
-        recordName.setText(gravacao.getFileName());
 
     }
 
+    @Override
+    protected void onServiceOnline () {
+        if ( !gravacaoService.hasGravacao() ) {
+            finish();
+            Toast.makeText(null, "Falha ao abrir gravação", Toast.LENGTH_LONG).show();
+            return;
+        } else gravacao = gravacaoService.getGravacao();
+
+        recordName.setText(gravacao.getRecordName());
+    }
+
     void saveRecordNameOnClick ( View view ) {
+        if ( !isBound ) return;
+
         if ( !Pattern.matches("\\w|(\\w[- \\w]*\\w)", recordName.getText()) ) {
             Toast.makeText(this, "Nome vazio ou inválido", Toast.LENGTH_LONG).show();
             return;
         }
-        if ( !gravacao.renameAndSaveUnsafe(recordName.getText().toString()) ) {
-            Toast.makeText(this, "Falha em salvar. Nome já existente?", Toast.LENGTH_LONG).show();
-            return;
-        }
 
-        Toast.makeText(this, "Salvo com sucesso", Toast.LENGTH_SHORT).show();
-
-        setResult(RESULT_OK);
-        finish();
+        gravacaoService.renameAndSaveAssync(recordName.getText().toString(),
+                new GravacaoService.onGravacaoSavedListener() {
+                    @Override
+                    public void onSaved ( boolean success ) {
+                        if ( success ) {
+                            Toast.makeText(NameToSaveActivity.this,
+                                    "Salvo com sucesso", Toast.LENGTH_SHORT).show();
+                            setResult(RESULT_OK);
+                            finish();
+                        } else {
+                            Toast.makeText(NameToSaveActivity.this,
+                                    "Falha em salvar. Nome já existente?", Toast.LENGTH_LONG)
+                                    .show();
+                        }
+                    }
+                });
     }
 
     @Override
