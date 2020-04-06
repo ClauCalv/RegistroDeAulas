@@ -18,27 +18,13 @@ public class MainActivity extends AbstractMenuActivity {
         super.onCreate(savedInstanceState, R.layout.activity_main, R.id.my_toolbar, false);
 
         initRecord = findViewById(R.id.initRecord);
-        initRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                initRecordOnClick(view);
-            }
-        });
+        initRecord.setOnClickListener(this::initRecordOnClick);
 
         joinHostRecord = findViewById(R.id.joinHostRecord);
-        joinHostRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                joinHostRecordOnClick(view);
-            }
-        });
+        joinHostRecord.setOnClickListener(this::joinHostRecordOnClick);
+
         viewRecords = findViewById(R.id.viewRecords);
-        viewRecords.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                viewRecordsOnClick(view);
-            }
-        });
+        viewRecords.setOnClickListener(this::viewRecordsOnClick);
 
     }
 

@@ -39,12 +39,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
         super.onCreate(savedInstanceState, R.layout.activity_record_audio, R.id.my_toolbar, true);
 
         startStop = findViewById(R.id.startRecording);
-        startStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                startStopOnClick(view);
-            }
-        });
+        startStop.setOnClickListener(this::startStopOnClick);
         startStop.setText(start);
 
         finishedLabel = findViewById(R.id.finishedLabel);
@@ -112,7 +107,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
         if ( !isBound ) return;
 
         if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
-            gravacaoService.prepareGravacaoForRecord(GravacaoService.MEDIATYPE_AUDIO);
+            gravacaoService.prepareForRecord(GravacaoService.MEDIATYPE_AUDIO);
         switch ( gravacaoService.getServiceStatus() ) {
             case GravacaoService.STATUS_RECORD_PREPARED:
                 if ( !gravacaoService.startRecording() ) {
@@ -125,19 +120,18 @@ public class RecordAudioActivity extends AbstractServiceActivity
                 gravacaoService.stopRecording();
                 break;
             case GravacaoService.STATUS_WAITING_SAVE:
-                fragment.alertSave(new AnnotationsFragment.annotationSavedListener() {
-                    @Override
-                    public void onAnnotationSaved () {
-                        Intent intent = new Intent(RecordAudioActivity.this,
-                                SaveGravacaoActivity.class);
-                        intent.putExtra("RequestCode", AUDIO_REQUEST);
-                        startActivityForResult(intent, AUDIO_REQUEST);
-                    }
-                });
+                fragment.alertSave(this::onAnnotationSaved);
                 break;
         }
 
         updateState();
+    }
+
+    public void onAnnotationSaved () {
+        Intent intent = new Intent(RecordAudioActivity.this,
+                SaveGravacaoActivity.class);
+        intent.putExtra("RequestCode", AUDIO_REQUEST);
+        startActivityForResult(intent, AUDIO_REQUEST);
     }
 
     @Override

@@ -16,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import br.ufabc.gravador.controls.helpers.ConnectionHelper;
 import br.ufabc.gravador.controls.helpers.MyFileManager;
 import br.ufabc.gravador.controls.helpers.NotificationHelper;
 import br.ufabc.gravador.models.Gravacao;
@@ -26,22 +27,21 @@ public class GravacaoService extends Service {
     public static final String ACTION_PLAY_PAUSE = "ACTION_PLAY_PAUSE", ACTION_NEXT = "ACTION_NEXT", ACTION_PREV = "ACTION_PREV";
     public static final int MEDIATYPE_AUDIO = 1, MEDIATYPE_VIDEO = 2, MEDIATYPE_NULL = 0;
     public static final String AUDIO_EXTENSION = ".3gp", VIDEO_EXTENSION = "??";//TODO video
-    public static final int STATUS_IDLE = -1, STATUS_RECORD_PREPARED = 0, STATUS_RECORDING = 1, STATUS_WAITING_SAVE = 2, STATUS_LOADING_SAVING = 3, STATUS_PLAYING = 4, STATUS_PAUSED = 5;
-    private static final int NOTIFICATION_ID = 44444;
+    public static final int STATUS_IDLE = -1, STATUS_RECORD_PREPARED = 0, STATUS_RECORDING = 1,
+            STATUS_WAITING_SAVE = 2, STATUS_LOADING_SAVING = 3, STATUS_PLAYING = 4,
+            STATUS_PAUSED = 5, STATUS_RECEIVING_TRANSMISSION = 6, STATUS_TRANSMITTING = 7;
+    private static final int NOTIFICATION_ID = 44744;
     private final IBinder binder = new LocalBinder();
 
     private int currMediaType = MEDIATYPE_NULL;
     private int serviceStatus = STATUS_IDLE;
 
     private NotificationHelper notificationHelper;
+    private ConnectionHelper connectionHelper;
     private Gravacao gravacao;
     private MediaRecorder recorder;
     private MediaPlayer player;
     private MyFileManager fileManager;
-
-    /*
-     * TIME-LOGIC BLOCK
-     */
 
     public interface TimeUpdateListener {
         void onTimeUpdate ( long time );
@@ -72,14 +72,6 @@ public class GravacaoService extends Service {
     private void stopTimer () { timeHandler.removeCallbacks(timeRunnable); }
 
     public long getTime () { return currentTime; }
-
-    /*
-     * END TIME-LOGIC
-     */
-
-    /*
-     * LIFECYCLE-LOGIC BLOCK
-     */
 
     @Override
     public void onCreate () {
@@ -125,7 +117,7 @@ public class GravacaoService extends Service {
     @Override
     public void onDestroy () {
         super.onDestroy();
-        //TODO stopPlaying();
+        stopPlaying();
         stopRecording();
         stopTimer();
     }
@@ -139,15 +131,6 @@ public class GravacaoService extends Service {
         goBackground();
     }
 
-
-    /*
-     * END LIFECYCLE-LOGIC
-     */
-
-    /*
-     *  RECORD-LOGIC BLOCK
-     */
-
     public void setGravacao ( Gravacao gravacao ) {
         this.gravacao = gravacao;
     }
@@ -158,7 +141,7 @@ public class GravacaoService extends Service {
 
     public Gravacao getGravacao () { return gravacao; }
 
-    public void prepareGravacaoForRecord ( int mediaType ) {
+    public void prepareForRecord ( int mediaType ) {
         if ( gravacao == null ) return;
         String location = null, extension = null;
         switch ( currMediaType = mediaType ) {
@@ -193,19 +176,15 @@ public class GravacaoService extends Service {
         recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         recorder.setOutputFile(gravacao.getRecordPath());
         recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        recorder.setOnErrorListener(new MediaRecorder.OnErrorListener() {
-            @Override
-            public void onError ( MediaRecorder mr, int what, int extra ) {
-                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra);
-            }
-        });
+        recorder.setOnErrorListener(( MediaRecorder mr, int what, int extra ) ->
+                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra));
 
         try {
             recorder.prepare();
         } catch ( IOException e ) {
             Log.e("AudioRecord", "prepare() failed", e);
             Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG);
-            prepareGravacaoForRecord(MEDIATYPE_NULL);
+            prepareForRecord(MEDIATYPE_NULL);
             return false;
         }
 
@@ -264,17 +243,9 @@ public class GravacaoService extends Service {
         });
     }
 
-    /*
-     * END RECORD-LOGIC
-     */
-
-    /*
-     * PLAYER-LOGIC BLOCK
-     */
-
     private boolean isPlayerPrepared = false;
 
-    public boolean prepareGravacaoForPlaying () {
+    public boolean prepareForPlaying () {
         if ( player == null )
             player = new MediaPlayer();
         else
@@ -285,6 +256,7 @@ public class GravacaoService extends Service {
             player.setLooping(false);
             player.prepare();
             isPlayerPrepared = true;
+            currentTime = 0;
         } catch ( IllegalArgumentException | IOException e ) {
             e.printStackTrace();
             Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG).show();
@@ -307,6 +279,7 @@ public class GravacaoService extends Service {
                 player.start();
                 startTimer(time);
                 goForeground();
+                Log.wtf("AAAAAAAAAAAAAAAA", gravacao.getRecordPath());
             } else {
                 player.pause();
                 stopTimer();
@@ -367,12 +340,104 @@ public class GravacaoService extends Service {
         serviceStatus = STATUS_IDLE;
     }
 
-    /*
-     * END PLAYER-LOGIC
-     */
+    private boolean isJoiningPrepared = false;
 
-    /*
-     * NOTIFICATION-LOGIC BLOCK
+    //     public boolean prepareForJoining () {
+    //         connectionHelper = new ConnectionHelper(this);
+    //
+    //         connectionHelper.startDiscovering();
+    //         connectionHelper.setConnectionListener(new ConnectionHelper.EmptyConnectionListener() {
+    //             public void onDiscoveryFailed () { onFail(); }
+    //             public void onEndpointDiscovered ( ConnectionHelper.Endpoint endpoint ) {
+    //                 if(blablabla) connectionHelper.connectToEndpoint(endpoint,"teste");
+    //             }
+    //             public void onConnectionInitiated ( ConnectionHelper.Endpoint endpoint, ConnectionInfo connectionInfo ) {
+    //                 if(blablabla) connectionHelper.acceptConnection(endpoint);
+    //             }
+    //             public void onConnectionFailed ( ConnectionHelper.Endpoint endpoint ) { onFail(); }
+    //             public void onEndpointConnected ( ConnectionHelper.Endpoint endpoint ) {
+    //
+    //             }
+    //             public void onEndpointDisconnected ( ConnectionHelper.Endpoint endpoint ) {
+    //
+    //             }
+    //         });
+    //
+    //        serviceStatus = STATUS_RECEIVING_TRANSMISSION;
+    //
+    //        return true;
+    //     }
+
+    /**
+     public boolean startPausePlaying ( boolean playPause ) {
+     if ( player == null || !isPlayerPrepared )
+     throw new IllegalStateException("player not prepared");
+
+     try {
+     if ( playPause ) {
+     long time = currentTime;
+     player.start();
+     startTimer(time);
+     goForeground();
+     } else {
+     player.pause();
+     stopTimer();
+     }
+
+     buildPlayPauseNotification(playPause);
+     serviceStatus = playPause ? STATUS_PLAYING : STATUS_PAUSED;
+
+     } catch ( IllegalStateException e ) {
+     Log.e("AudioPlayer", "bad state", e);
+     stopPlaying();
+     return false;
+     }
+     return true;
+     }
+
+     public int jumpTo ( int time ) {
+     if ( player == null || !isPlayerPrepared )
+     throw new IllegalStateException("player not prepared");
+
+     stopTimer();
+     player.seekTo(time);
+     startTimer(time);
+     return time;
+     }
+
+     public int nextPrev ( boolean isNext ) {
+     if ( player == null || !isPlayerPrepared )
+     throw new IllegalStateException("player not prepared");
+
+     int time;
+     long currTime = currentTime;
+     int[] times = gravacao.getAnnotationTimes();
+
+     List<Integer> lTimes = Arrays.stream(times)
+     .filter(x -> isNext ?
+     x > currTime :
+     x < currTime)
+     .sorted()
+     .boxed()
+     .collect(Collectors.toList());
+
+     time = lTimes.isEmpty() ?
+     isNext ? player.getDuration() : 0 :
+     isNext ? lTimes.get(0) : lTimes.get(lTimes.size() - 1);
+
+     return jumpTo(time);
+     }
+
+     private void stopPlaying () {
+     if ( player != null ) {
+     player.stop();
+     player.release();
+     player = null;
+     isPlayerPrepared = false;
+     }
+     goBackground();
+     serviceStatus = STATUS_IDLE;
+     }
      */
 
     private void buildPlayPauseNotification ( boolean isPlaying ) {

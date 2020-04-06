@@ -21,7 +21,7 @@ import br.ufabc.gravador.views.widgets.DottedSeekBar;
 public class OpenAudioActivity extends AbstractServiceActivity
         implements AnnotationsFragment.AnnotationFragmentListener {
 
-    public final int play = android.R.drawable.ic_media_play, pause = android.R.drawable.ic_media_pause; //TODO hardcoded
+    public final int play = R.drawable.ic_media_play, pause = R.drawable.ic_media_pause; //TODO hardcoded
     private int recordDuration, playTime;
 
     private ImageButton startStop, nextAnnotation, prevAnnotation;
@@ -37,29 +37,14 @@ public class OpenAudioActivity extends AbstractServiceActivity
         super.onCreate(savedInstanceState, R.layout.activity_open_audio, R.id.my_toolbar, true);
 
         startStop = findViewById(R.id.startStopPlaying);
-        startStop.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                startStopOnClick(view);
-            }
-        });
+        startStop.setOnClickListener(this::startStopOnClick);
         startStop.setImageResource(play);
 
         nextAnnotation = findViewById(R.id.nextAnnotation);
-        nextAnnotation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                nextPrevOnClick(view, true);
-            }
-        });
+        nextAnnotation.setOnClickListener(( view ) -> nextPrevOnClick(view, true));
 
         prevAnnotation = findViewById(R.id.prevAnnotation);
-        prevAnnotation.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                nextPrevOnClick(view, false);
-            }
-        });
+        prevAnnotation.setOnClickListener(( view ) -> nextPrevOnClick(view, false));
 
         recordName = findViewById(R.id.recordName);
         recordName.setText("");
@@ -105,6 +90,7 @@ public class OpenAudioActivity extends AbstractServiceActivity
         timeStamp.setText(Gravacao.formatTime(0));
         progressBar.setDots(gravacao.getAnnotationTimes());
         progressBar.setMax(recordDuration);
+        progressBar.invalidate();
     }
 
     @Override
@@ -127,7 +113,7 @@ public class OpenAudioActivity extends AbstractServiceActivity
     void startStopOnClick ( View view ) {
         if ( !isBound ) return;
         if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
-            gravacaoService.prepareGravacaoForPlaying();
+            gravacaoService.prepareForPlaying();
         switch ( gravacaoService.getServiceStatus() ) {
             case GravacaoService.STATUS_PAUSED:
                 if ( gravacaoService.startPausePlaying(true) ) {

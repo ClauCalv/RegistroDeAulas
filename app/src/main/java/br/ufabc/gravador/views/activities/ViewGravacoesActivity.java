@@ -66,12 +66,7 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
             @Override
             public void onBindViewHolder ( @NonNull RecyclerView.ViewHolder holder, final int position ) {
                 MyViewHolder myHolder = (MyViewHolder) holder;
-                myHolder.v.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick ( View view ) {
-                        selectGravacao(position);
-                    }
-                });
+                myHolder.v.setOnClickListener(( view ) -> selectGravacao(position));
                 myHolder.gravacaoName.setText(gravacaos.get(position).getName());
             }
 

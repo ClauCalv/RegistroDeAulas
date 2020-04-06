@@ -1,56 +1,41 @@
 package br.ufabc.gravador.views.activities;
 
+import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-
 import br.ufabc.gravador.R;
+import br.ufabc.gravador.controls.helpers.PermissionHelper;
 
-public class SharedRecordActivity extends AppCompatActivity {
+public class SharedRecordActivity extends AbstractMenuActivity {
 
     Button joinRoom, newRoom;
-    Toolbar myToolbar;
-    ActionBar myActionBar;
 
+    @SuppressLint( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_shared_record);
+        super.onCreate(savedInstanceState, R.layout.activity_shared_record, R.id.my_toolbar, true);
 
         joinRoom = findViewById(R.id.joinRoom);
         newRoom = findViewById(R.id.newRoom);
 
-        myToolbar = findViewById(R.id.my_toolbar);
-        setSupportActionBar(myToolbar);
-        myActionBar = getSupportActionBar();
-        myActionBar.setDisplayHomeAsUpEnabled(true);
-
-        joinRoom.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                joinRoomOnClick(view);
-            }
-        });
-        newRoom.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                newRoomOnClick(view);
-            }
-        });
+        joinRoom.setOnClickListener(this::joinRoomOnClick);
+        newRoom.setOnClickListener(this::newRoomOnClick);
     }
 
     void joinRoomOnClick ( View view ) {
+        PermissionHelper ph = new PermissionHelper(this);
         Intent intent = new Intent(this, JoinRoomActivity.class);
-        startActivity(intent);
+        ph.startIfPermitted(intent, PermissionHelper.REQUEST_STREAM,
+                PermissionHelper.STREAM_PERMISSIONS);
     }
 
     void newRoomOnClick ( View view ) {
+        PermissionHelper ph = new PermissionHelper(this);
         Intent intent = new Intent(this, CreateRoomActivity.class);
-        startActivity(intent);
+        ph.startIfPermitted(intent, PermissionHelper.REQUEST_STREAM,
+                PermissionHelper.STREAM_PERMISSIONS);
     }
 }

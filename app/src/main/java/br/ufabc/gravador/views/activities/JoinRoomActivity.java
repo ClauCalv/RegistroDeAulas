@@ -5,33 +5,35 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import br.ufabc.gravador.R;
 
-public class JoinRoomActivity extends AppCompatActivity {
+public class JoinRoomActivity extends AbstractServiceActivity {
 
     Button readQRCode, joinRoomConfirm;
     TextView roomName;
 
+    @SuppressWarnings( "MissingSuperCall" )
     @Override
     protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_join_room);
+        super.onCreate(savedInstanceState, R.layout.activity_join_room, R.id.my_toolbar, true);
 
         readQRCode = findViewById(R.id.readQRCode);
         joinRoomConfirm = findViewById(R.id.joinRoomConfirm);
         roomName = findViewById(R.id.RoomName);
 
-        readQRCode.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) { readQRCodeOnClick(view); }
-        });
+        readQRCode.setOnClickListener(this::readQRCodeOnClick);
 
-        joinRoomConfirm.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) { joinRoomConfirmOnClick(view); }
-        });
+        joinRoomConfirm.setOnClickListener(this::joinRoomConfirmOnClick);
+    }
+
+    @Override
+    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled ) {
+
+    }
+
+    @Override
+    protected void onServiceOnline () {
+
     }
 
     void readQRCodeOnClick ( View view ) {}

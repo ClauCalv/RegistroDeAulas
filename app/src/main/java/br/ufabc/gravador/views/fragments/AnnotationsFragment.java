@@ -185,36 +185,16 @@ public class AnnotationsFragment extends Fragment {
         });
 
         annotationNewButton = master.findViewById(R.id.annotationNewButton);
-        annotationNewButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                newButtonOnClick();
-            }
-        });
+        annotationNewButton.setOnClickListener(this::newButtonOnClick);
 
         annotationTakePicture = master.findViewById(R.id.annotationTakePicture);
-        annotationTakePicture.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                takePictureOnClick();
-            }
-        });
+        annotationTakePicture.setOnClickListener(this::takePictureOnClick);
 
         annotationSave = master.findViewById(R.id.annotationSave);
-        annotationSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                saveOnClick();
-            }
-        });
+        annotationSave.setOnClickListener(this::saveOnClick);
 
         annotationDelete = master.findViewById(R.id.annotationDelete);
-        annotationDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                deleteOnClick();
-            }
-        });
+        annotationDelete.setOnClickListener(this::deleteOnClick);
 
         annotationTime = master.findViewById(R.id.annotationTime);
 
@@ -246,7 +226,7 @@ public class AnnotationsFragment extends Fragment {
                     .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick ( DialogInterface dialogInterface, int i ) {
-                            if ( i == AlertDialog.BUTTON_POSITIVE ) saveOnClick();
+                            if ( i == AlertDialog.BUTTON_POSITIVE ) saveOnClick(null);
                             listener.onAnnotationSaved();
                         }
                     })
@@ -268,7 +248,7 @@ public class AnnotationsFragment extends Fragment {
                     .setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick ( DialogInterface dialogInterface, int i ) {
-                            if ( i == AlertDialog.BUTTON_POSITIVE ) saveOnClick();
+                            if ( i == AlertDialog.BUTTON_POSITIVE ) saveOnClick(null);
                             changeAnnotation(ID);
                         }
                     }).setNegativeButton("Descartar", new DialogInterface.OnClickListener() {
@@ -304,14 +284,14 @@ public class AnnotationsFragment extends Fragment {
         activityListener.onAnnotationChanged(selectedID, firstTime);
     }
 
-    public void saveOnClick () {
+    public void saveOnClick ( View view ) {
         gravacao.setAnnotationName(selectedID, annotationName.getText().toString());
         gravacao.setAnnotationText(selectedID, annotationContent.getText().toString());
         adapter.notifyDataSetChanged();
         hasTextChanged = false;
     }
 
-    public void deleteOnClick () {
+    public void deleteOnClick ( View view ) {
         if ( selectedID == -1 ) return;
 
         final int time = gravacao.getAnnotation(selectedID).getTime();
@@ -329,7 +309,7 @@ public class AnnotationsFragment extends Fragment {
         jumpToTime(lTimes.isEmpty() ? 0 : lTimes.get(lTimes.size() - 1));
     }
 
-    public void newButtonOnClick () {
+    public void newButtonOnClick ( View view ) {
         if ( gravacao == null ) return;
 
         alertSave(new annotationSavedListener() {
@@ -344,7 +324,7 @@ public class AnnotationsFragment extends Fragment {
         });
     }
 
-    public void takePictureOnClick () {
+    public void takePictureOnClick ( View view ) {
         //TODO
     }
 

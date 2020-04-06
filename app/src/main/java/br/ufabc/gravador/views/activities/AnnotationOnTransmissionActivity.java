@@ -6,7 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import br.ufabc.gravador.R;
 
-//DOESNT EXTENDS MYMENUACTIVITY!!!!!!
+//TODO extend abstractMenuActivity
 public class AnnotationOnTransmissionActivity extends AppCompatActivity {
 
     @Override

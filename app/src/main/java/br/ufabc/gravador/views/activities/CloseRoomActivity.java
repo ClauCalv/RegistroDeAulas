@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import br.ufabc.gravador.R;
 
+//TODO extend abstractMenuActivity
 public class CloseRoomActivity extends AppCompatActivity {
 
     @Override

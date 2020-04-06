@@ -26,12 +26,7 @@ public class NameToSaveActivity extends AbstractServiceActivity {
         super.onCreate(savedInstanceState, R.layout.activity_name_to_save, R.id.my_toolbar, true);
 
         saveRecordName = findViewById(R.id.saveRecordName);
-        saveRecordName.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                saveRecordNameOnClick(view);
-            }
-        });
+        saveRecordName.setOnClickListener(this::saveRecordNameOnClick);
 
         recordName = findViewById(R.id.recordName);
 

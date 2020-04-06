@@ -23,7 +23,7 @@ public class MyFileManager {
     private boolean isSetup = false;
     private Context context;
 
-    private MyFileManager () {}
+    private MyFileManager () {} //FIXME
 
     public static MyFileManager getInstance () {
         if ( instance == null ) instance = new MyFileManager();

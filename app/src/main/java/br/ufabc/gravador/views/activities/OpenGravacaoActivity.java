@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -30,30 +31,15 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
         super.onCreate(savedInstanceState, R.layout.activity_open_gravacao, R.id.my_toolbar, true);
 
         changeRecord = findViewById(R.id.changeRecord);
-        changeRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                changeRecordOnClick(view);
-            }
-        });
+        changeRecord.setOnClickListener(this::changeRecordOnClick);
         changeRecord.setText(REMOVE);
 
         playRecord = findViewById(R.id.playRecord);
-        playRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                playRecordOnClick(view);
-            }
-        });
+        playRecord.setOnClickListener(this::playRecordOnClick);
         playRecord.setEnabled(false);
 
         deleteGravacao = findViewById(R.id.deleteGravacao);
-        deleteGravacao.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                deleteGravacaoOnClick(view);
-            }
-        });
+        deleteGravacao.setOnClickListener(this::deleteGravacaoOnClick);
     }
 
     @Override
@@ -112,13 +98,17 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
         String mimetype = null, duration = "";
 
         if ( hasRecord ) {
-            MediaScannerConnection.scanFile(this, new String[]{gravacao.getRecordPath()}, null,
-                    null);
-            MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-            mmr.setDataSource(gravacao.getRecordPath());
-            mimetype = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
-            duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
-            mmr.release();
+            try {
+                MediaScannerConnection.scanFile(this, new String[]{gravacao.getRecordPath()}, null,
+                        null);
+                MediaMetadataRetriever mmr = new MediaMetadataRetriever();
+                mmr.setDataSource(gravacao.getRecordPath());
+                mimetype = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
+                duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+                mmr.release();
+            } catch ( IllegalArgumentException e ) {
+                Log.e("OpenGravacaoActivity", "Erro: ", e);
+            }
         }
 
         if ( mimetype != null ) {
@@ -135,6 +125,7 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
             if ( intent != null ) {
                 intent.putExtra("Duration", Integer.valueOf(duration));
                 startActivity(intent);
+                gravacaoService.prepareForPlaying();
                 return;
             }
         }

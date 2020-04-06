@@ -36,28 +36,13 @@ public class SaveGravacaoActivity extends AbstractServiceActivity {
         });
 
         saveRecord = findViewById(R.id.saveRecord);
-        saveRecord.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                saveRecordOnClick(view);
-            }
-        });
+        saveRecord.setOnClickListener(this::saveRecordOnClick);
 
         saveAnnotations = findViewById(R.id.saveAnnotation);
-        saveAnnotations.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                saveAnnotationsOnClick(view);
-            }
-        });
+        saveAnnotations.setOnClickListener(this::saveAnnotationsOnClick);
 
         saveNone = findViewById(R.id.saveNone);
-        saveNone.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick ( View view ) {
-                saveNoneOnClick(view);
-            }
-        });
+        saveNone.setOnClickListener(this::saveNoneOnClick);
     }
 
     @Override
