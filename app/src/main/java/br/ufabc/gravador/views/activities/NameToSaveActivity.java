@@ -11,8 +11,8 @@ import android.widget.Toast;
 import java.util.regex.Pattern;
 
 import br.ufabc.gravador.R;
-import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
+import br.ufabc.gravador.models.GravacaoHandler;
 
 public class NameToSaveActivity extends AbstractServiceActivity {
 
@@ -40,7 +40,7 @@ public class NameToSaveActivity extends AbstractServiceActivity {
             return;
         } else gravacao = gravacaoService.getGravacao();
 
-        recordName.setText(gravacao.getRecordName());
+        recordName.setText(gravacao.getName());
     }
 
     void saveRecordNameOnClick ( View view ) {
@@ -51,10 +51,10 @@ public class NameToSaveActivity extends AbstractServiceActivity {
             return;
         }
 
-        gravacaoService.renameAndSaveAssync(recordName.getText().toString(),
-                new GravacaoService.onGravacaoSavedListener() {
+        gravacaoService.renameAndSave(recordName.getText().toString(),
+                new GravacaoHandler.SaveListener() {
                     @Override
-                    public void onSaved ( boolean success ) {
+                    public void onGravacaoSaved ( boolean success ) {
                         if ( success ) {
                             Toast.makeText(NameToSaveActivity.this,
                                     "Salvo com sucesso", Toast.LENGTH_SHORT).show();

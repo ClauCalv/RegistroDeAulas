@@ -61,7 +61,7 @@ public class SaveGravacaoActivity extends AbstractServiceActivity {
     private void saveFile ( boolean record, boolean annotation ) {
         if ( !isBound ) return;
 
-        gravacao.saveMode(record, annotation);
+        gravacaoService.setSaveMode(record, annotation);
         Intent intent = new Intent(this, NameToSaveActivity.class);
         intent.putExtra("RequestCode", requestCode);
         startActivityForResult(intent, requestCode);

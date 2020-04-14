@@ -5,16 +5,15 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.MediaMetadataRetriever;
-import android.media.MediaScannerConnection;
 import android.os.Bundle;
+import android.os.ParcelFileDescriptor;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import java.io.File;
-
 import br.ufabc.gravador.R;
+import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.models.Gravacao;
 
 public class OpenGravacaoActivity extends AbstractServiceActivity {
@@ -24,6 +23,7 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
 
     private Gravacao gravacao;
     private boolean hasRecord = false, hasAnnotation = false;
+    private DirectoryHelper dh;
 
     @SuppressLint( "MissingSuperCall" )
     @Override
@@ -40,6 +40,7 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
 
         deleteGravacao = findViewById(R.id.deleteGravacao);
         deleteGravacao.setOnClickListener(this::deleteGravacaoOnClick);
+        dh = new DirectoryHelper(this);
     }
 
     @Override
@@ -63,14 +64,14 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
 
     public void removeRecord () {
         if ( !isBound ) return;
-        gravacao.removeRecord();
+        gravacaoService.removeRecordAndSave();
         updateRecordState();
     }
 
     public void deleteAndQuit () {
         if ( !isBound ) return;
-        File f = new File(gravacao.getAnnotationPath());
-        f.delete();
+        new DirectoryHelper(this).deleteFileFromURI(gravacao.getAnnotationURI());
+        gravacaoService.setGravacao(null);
         finish();
     }
 
@@ -95,14 +96,14 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
     void playRecordOnClick ( View view ) {
         if ( !isBound ) return;
 
-        String mimetype = null, duration = "";
+        String mimetype = null, duration = ""; //TODO continuar aqui
 
         if ( hasRecord ) {
             try {
-                MediaScannerConnection.scanFile(this, new String[]{gravacao.getRecordPath()}, null,
-                        null);
+                //MediaScannerConnection.scanFile(this, new String[]{gravacao.getRecordPath()}, null,null);
                 MediaMetadataRetriever mmr = new MediaMetadataRetriever();
-                mmr.setDataSource(gravacao.getRecordPath());
+                ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
+                mmr.setDataSource(fd.getFileDescriptor());
                 mimetype = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_MIMETYPE);
                 duration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
                 mmr.release();
@@ -123,7 +124,7 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
                 ;//TODO
 
             if ( intent != null ) {
-                intent.putExtra("Duration", Integer.valueOf(duration));
+                gravacaoService.setTimeTotal(Long.valueOf(duration));
                 startActivity(intent);
                 gravacaoService.prepareForPlaying();
                 return;

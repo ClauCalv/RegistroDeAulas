@@ -1,7 +1,6 @@
 package br.ufabc.gravador.models;
 
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Log;
 import android.util.SparseArray;
 import android.util.Xml;
@@ -10,9 +9,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
@@ -22,15 +18,14 @@ import java.util.Locale;
 public class Gravacao {
 
     public static final String annotationExtension = ".grv.xml";
-    private String recordLocation, recordName, recordExtension, annotationLocation, annotationName;
-    private boolean saveRecord = true, saveAnnotations = true;
-    private SparseArray<Annotations> annotations;
-    private boolean lastSaved, failed;
+    protected String recordURI, annotationURI, annotationName;
+
+    protected SparseArray<Annotations> annotations;
+    protected boolean lastSaved, isSaving = false;
     private int lastAnnotationID = 0;
 
-    private Gravacao ( String annotationLocation, String annotationName ) {
+    protected Gravacao () {
         annotations = new SparseArray<Annotations>();
-        this.annotationLocation = annotationLocation;
         this.annotationName = annotationName;
     }
 
@@ -41,42 +36,49 @@ public class Gravacao {
                 : String.format(Locale.getDefault(), "%02d:%02d", mm, ss);
     }
 
-    public static Gravacao CreateEmpty ( String annotationLocation, String annotationName ) {
-        Gravacao g = new Gravacao(annotationLocation, annotationName);
-        g.lastSaved = true;
-        g.failed = true;
-        return g;
-    }
+    public String getName () { return annotationName; }
 
-    public static Gravacao LoadFromFile ( String annotationLocation, String annotationName ) {
-        Gravacao gravacao = new Gravacao(annotationLocation, annotationName);
-        SparseArray<Annotations> annotations = gravacao.annotations;
+    public String getAnnotationURI () { return annotationURI; }
+
+    public void setRecordURI ( String recordURI ) { this.recordURI = recordURI; }
+
+    public String getRecordURI () { return recordURI; }
+
+    public boolean isLastSaved () { return lastSaved; }
+
+    public boolean isSaving () { return isSaving; }
+
+    public boolean hasRecord () { return recordURI != null; }
+
+    public boolean hasAnnotation () { return annotations.size() != 0; }
+
+    public int getAnnotationCount () { return annotations.size(); }
+
+    protected boolean loadXML ( InputStream inputStream ) {
         try {
-            File inputFile = new File(gravacao.getAnnotationPath());
-            InputStream inputStream = new FileInputStream(inputFile);
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(inputStream, null);
             parser.nextTag();
 
+            annotations.clear();
             Annotations a = null;
             int eventType = parser.getEventType();
             while ( eventType != XmlPullParser.END_DOCUMENT ) {
                 if ( eventType == XmlPullParser.START_TAG ) {
-                    if ( parser.getName().equals("Record") ) {
-                        gravacao.recordExtension = parser.getAttributeValue(null, "Extension");
+                    if ( parser.getName().equals("Name") ) {
                         if ( parser.next() == XmlPullParser.TEXT ) {
-                            String text = parser.getText();
-                            text = text.replace(gravacao.recordExtension, "");
-                            int aux = text.lastIndexOf(File.separatorChar) + 1;
-                            gravacao.recordLocation = text.substring(0, aux);
-                            gravacao.recordName = text.substring(aux);
+                            annotationName = parser.getText();
+                        }
+                    } else if ( parser.getName().equals("Record") ) {
+                        if ( parser.next() == XmlPullParser.TEXT ) {
+                            recordURI = parser.getText();
                         }
                     } else if ( parser.getName().equals("Annotation") ) {
                         int id = Integer.valueOf(parser.getAttributeValue(null, "ID"));
                         String name = parser.getAttributeValue(null, "name");
                         int milissec = Integer.valueOf(parser.getAttributeValue(null, "time"));
-                        a = gravacao.addAnnotation(milissec, id, name);
+                        a = addAnnotation(milissec, id, name);
                     } else if ( parser.getName().equals("Content") ) {
                         String type = parser.getAttributeValue(null, "contentType");
                         if ( parser.next() == XmlPullParser.TEXT ) {
@@ -89,115 +91,40 @@ public class Gravacao {
                 } else if ( eventType == XmlPullParser.END_TAG )
                     if ( parser.getName().equals("Annotation") ) a = null;
 
-
                 eventType = parser.next();
             }
             Log.i("xml", "Load successful");
 
+            lastAnnotationID = annotations.size() > 0
+                    ? annotations.keyAt(annotations.size() - 1)
+                    : 0;
+            return true;
+
         } catch ( XmlPullParserException e ) {
             Log.e("xml", "XML malformed", e);
-            return null;
         } catch ( IOException e ) {
             Log.e("xml", "IO Exception", e);
-            return null;
         }
-
-        gravacao.lastAnnotationID = annotations.size() > 0 ? annotations.keyAt(
-                annotations.size() - 1) : 0;
-        gravacao.lastSaved = true;
-        gravacao.failed = false;
-        return gravacao;
+        return false;
     }
 
-    public String getName () {
-        return annotationName;
-    }
-
-    public void setRecordLocation ( String recordLocation ) {
-        this.recordLocation = recordLocation;
-    }
-
-    public void setRecordExtension ( String recordExtension ) {
-        this.recordExtension = recordExtension;
-    }
-
-    public String getRecordName () {
-        return recordName;
-    }
-
-    public void setRecordName ( String recordName ) {
-        this.recordName = recordName;
-        lastSaved = false;
-    }
-
-    public String getRecordPath () {
-        return new File(recordLocation, recordName + recordExtension).getAbsolutePath();
-    }
-
-    public String getAnnotationPath () {
-        return new File(annotationLocation, annotationName + annotationExtension).getAbsolutePath();
-    }
-
-    public void saveMode ( boolean record, boolean annotations ) {
-        saveRecord = record;
-        saveAnnotations = annotations;
-    }
-
-    public boolean hasAnnotation () {
-        return annotations.size() != 0;
-    }
-
-    public boolean hasRecord () {
-        return recordExtension != null && recordName != null;
-    }
-
-    public int getAnnotationCount () {
-        return annotations.size();
-    }
-
-    public boolean renameAndSave ( String annotationName ) {
-        File target = new File(getAnnotationPath());
-        if ( target.exists() ) return false;
-        this.annotationName = annotationName;
-        saveGravacaoByLastMode();
-        return true;
-    }
-
-    public void removeRecord () {
-        saveMode(false, true);
-        recordName = null;
-        recordExtension = null;
-        saveGravacaoByLastMode();
-    }
-
-    public void sucess () {
-        failed = false;
-    }
-
-    public void abortIfFailed () {
-        if ( failed ) new File(getRecordPath()).delete();
-    }
-
-    public boolean saveGravacao ( boolean record, boolean annotations ) {
-        saveMode(record, annotations);
-        return saveGravacaoByLastMode();
-    }
-
-    public boolean saveGravacaoByLastMode () {
+    public boolean saveXML ( StringWriter writer, boolean saveRecord, boolean saveAnnotations ) {
+        isSaving = true;
         try {
-            File outputFile = new File(getAnnotationPath());
-            FileOutputStream fileOutputStream = new FileOutputStream(outputFile);
+            Log.wtf("saveXML",
+                    saveRecord + ", " + hasRecord() + ", " + saveAnnotations + ", " + hasAnnotation());
             XmlSerializer xmlSerializer = Xml.newSerializer();
-            StringWriter writer = new StringWriter();
-
             xmlSerializer.setOutput(writer);
             xmlSerializer.startDocument("UTF-8", true);
             xmlSerializer.startTag(null, "doc");
 
+            xmlSerializer.startTag(null, "Name");
+            xmlSerializer.text(annotationName);
+            xmlSerializer.endTag(null, "Name");
+
             if ( saveRecord && hasRecord() ) {
                 xmlSerializer.startTag(null, "Record");
-                xmlSerializer.attribute(null, "Extension", recordExtension);
-                xmlSerializer.text(getRecordPath());
+                xmlSerializer.text(getRecordURI());
                 xmlSerializer.endTag(null, "Record");
             }
 
@@ -212,25 +139,16 @@ public class Gravacao {
             xmlSerializer.endDocument();
             xmlSerializer.flush();
 
-            String dataWrite = writer.toString();
-            fileOutputStream.write(dataWrite.getBytes());
-            fileOutputStream.close();
-
-            saveRecord = saveAnnotations = true;
-            sucess();
-            lastSaved = true;
+            isSaving = false;
+            return true;
 
         } catch ( IllegalArgumentException | IllegalStateException e ) {
             Log.e("xml", "XML malformed", e);
         } catch ( IOException e ) {
             Log.e("xml", "IO Exception", e);
         }
-
+        isSaving = false;
         return false;
-    }
-
-    public boolean isLastSaved () {
-        return lastSaved;
     }
 
     public Annotations addAnnotation ( int milissec, String name ) {
@@ -296,19 +214,19 @@ public class Gravacao {
         lastSaved = false;
     }
 
-    public void setAnnotationImage ( int id, String path ) {
-        Annotations a = annotations.get(id);
-        if ( a == null ) return;
-
-        a.addImage(path);
-        lastSaved = false;
-    }
+    //    public void setAnnotationImage ( int id, String uri ) {
+    //        Annotations a = annotations.get(id);
+    //        if ( a == null ) return;
+    //
+    //        a.addImage(uri);
+    //        lastSaved = false;
+    //    }
 
     public class Annotations implements Serializable {
 
         public final int id;
 
-        private String name, text, imagePath;
+        private String name, text, imageUri;
         private int time;
 
         transient private Bitmap icon;
@@ -325,6 +243,7 @@ public class Gravacao {
             this.time = millissec;
             this.name = name;
             this.id = id;
+            if ( id > lastAnnotationID ) lastAnnotationID = id;
         }
 
         public int getTime () { return time; }
@@ -345,44 +264,44 @@ public class Gravacao {
 
         public boolean hasText () { return text != null; }
 
-        public String getImagePath () { return imagePath; }
+        public String getImageUri () { return imageUri; }
 
-        protected void addImage ( String imagePath ) {
-            this.imagePath = imagePath;
+        protected void addImage ( String imageUri ) {
+            this.imageUri = imageUri;
         }
 
         public boolean hasImage () {
-            return imagePath != null;
+            return imageUri != null;
         }
 
-        public Bitmap getIcon ( int targetW, int targetH ) {
-            if ( imagePath == null ) return null;
+        //        public Bitmap getIcon ( int targetW, int targetH ) {
+        //            if ( imagePath == null ) return null;
+        //
+        //            if ( targetW <= 0 || targetH <= 0 ) return null;
+        //
+        //            if ( icon != null && targetW == iconW && targetH == iconH ) return icon;
+        //
+        //            // Get the dimensions of the bitmap
+        //            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        //            bmOptions.inJustDecodeBounds = true;
+        //            BitmapFactory.decodeFile(imagePath, bmOptions);
+        //
+        //            int photoW = bmOptions.outWidth;
+        //            int photoH = bmOptions.outHeight;
+        //
+        //            // Determine how much to scale down the image
+        //            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+        //
+        //            // Decode the image file into a Bitmap sized to fill the View
+        //            bmOptions.inJustDecodeBounds = false;
+        //            bmOptions.inSampleSize = scaleFactor;
+        //            bmOptions.inPurgeable = true;
+        //
+        //            icon = BitmapFactory.decodeFile(imagePath, bmOptions);
+        //            return icon;
+        //        }
 
-            if ( targetW <= 0 || targetH <= 0 ) return null;
-
-            if ( icon != null && targetW == iconW && targetH == iconH ) return icon;
-
-            // Get the dimensions of the bitmap
-            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-            bmOptions.inJustDecodeBounds = true;
-            BitmapFactory.decodeFile(imagePath, bmOptions);
-
-            int photoW = bmOptions.outWidth;
-            int photoH = bmOptions.outHeight;
-
-            // Determine how much to scale down the image
-            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-            // Decode the image file into a Bitmap sized to fill the View
-            bmOptions.inJustDecodeBounds = false;
-            bmOptions.inSampleSize = scaleFactor;
-            bmOptions.inPurgeable = true;
-
-            icon = BitmapFactory.decodeFile(imagePath, bmOptions);
-            return icon;
-        }
-
-        public void saveAnnotation ( XmlSerializer xml ) throws IOException {
+        protected void saveAnnotation ( XmlSerializer xml ) throws IOException {
             xml.startTag(null, "Annotation");
             xml.attribute(null, "ID", String.valueOf(id));
             xml.attribute(null, "name", name);
@@ -399,7 +318,7 @@ public class Gravacao {
             if ( hasImage() ) {
                 xml.startTag(null, "Content");
                 xml.attribute(null, "contentType", "image");
-                xml.text(imagePath);
+                xml.text(imageUri);
                 xml.endTag(null, "Content");
             }
 

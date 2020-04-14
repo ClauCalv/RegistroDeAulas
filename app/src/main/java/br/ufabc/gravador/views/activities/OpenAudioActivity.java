@@ -85,11 +85,11 @@ public class OpenAudioActivity extends AbstractServiceActivity
 
         int serviceStatus = gravacaoService.getServiceStatus();
 
-        startStop.setImageResource(serviceStatus == GravacaoService.STATUS_PLAYING ? play : pause);
+        startStop.setImageResource(serviceStatus == GravacaoService.STATUS_PLAYING ? pause : play);
         recordName.setText(gravacao.getName());
         timeStamp.setText(Gravacao.formatTime(0));
         progressBar.setDots(gravacao.getAnnotationTimes());
-        progressBar.setMax(recordDuration);
+        progressBar.setMax(recordDuration = (int) gravacaoService.getTimeTotal());
         progressBar.invalidate();
     }
 
@@ -173,13 +173,11 @@ public class OpenAudioActivity extends AbstractServiceActivity
     @Override
     protected void onPause () {
         super.onPause();
-        fragment.alertSave(new AnnotationsFragment.annotationSavedListener() {
-            @Override
-            public void onAnnotationSaved () {
-                gravacao.saveGravacao(true, true);
-            }
+        fragment.alertSave(() -> {
+            gravacaoService.setSaveMode(true, true);
+            gravacaoService.saveGravacao(null);
         });
-        //TODO RELEASE
+        //TODO SALVAR MESMO??????
     }
 
     @Override

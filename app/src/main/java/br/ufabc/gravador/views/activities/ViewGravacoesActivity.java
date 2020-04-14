@@ -2,6 +2,8 @@ package br.ufabc.gravador.views.activities;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.media.MediaScannerConnection;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
@@ -20,13 +22,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import br.ufabc.gravador.R;
-import br.ufabc.gravador.controls.helpers.MyFileManager;
+import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.models.Gravacao;
+import br.ufabc.gravador.models.GravacaoHandler;
 
 public class ViewGravacoesActivity extends AbstractServiceActivity {
 
     public static String loading = "Recuperando Gravações", loaded = "Gravações existentes:";
-    private MyFileManager fileManager;
+    private DirectoryHelper dh;
     private TextView txtGravacaoList;
     private RecyclerView gravacaoList;
 
@@ -47,8 +50,7 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
         super.onCreate(savedInstanceState, R.layout.activity_view_recordings, R.id.my_toolbar,
                 true);
 
-        fileManager = MyFileManager.getInstance();
-        fileManager.setup(getApplicationContext());
+        dh = new DirectoryHelper(this);
 
         txtGravacaoList = findViewById(R.id.txtGravacaoList);
         txtGravacaoList.setText(loading);
@@ -96,7 +98,7 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
     @Override
     protected void onResume () {
         super.onResume();
-        if ( fileManager != null ) loadFiles();
+        if ( dh != null ) loadFiles();
         if ( gravacaoList != null ) gravacaoList.getAdapter().notifyDataSetChanged();
     }
 
@@ -109,17 +111,29 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
     }
 
     public void loadFiles () {
-        List<File> files = fileManager.listFiles(MyFileManager.GRAVACAO_DIR, new FilenameFilter() {
+        GravacaoHandler gh = new GravacaoHandler(this, dh);
+
+        MediaScannerConnection.scanFile(this,
+                new String[]{dh.getDirectory(DirectoryHelper.GRAVACAO_DIR).toString()},
+                null,
+                null);
+
+        List<File> files = dh.listFiles(DirectoryHelper.GRAVACAO_DIR, new FilenameFilter() {
             @Override
             public boolean accept ( File file, String s ) {
+                Log.wtf("loadFiles", "file:" + file.toString() + " name:" + s);
                 return s.endsWith(Gravacao.annotationExtension);
             }
         });
+
         gravacaos = new ArrayList<Gravacao>();
+
         for ( File f : files ) {
-            Gravacao g = Gravacao.LoadFromFile(f.getParent(),
-                    f.getName().split(Gravacao.annotationExtension)[0]);
-            if ( g == null ) continue;
+            Gravacao g = gh.CreateFromXML(Uri.fromFile(f).toString());
+            if ( g == null ) {
+                Log.wtf("loadFiles", "load failed at " + f.toString());
+                continue;
+            }
             gravacaos.add(g);
         }
     }

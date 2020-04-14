@@ -13,10 +13,8 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
-import java.io.File;
-
 import br.ufabc.gravador.R;
-import br.ufabc.gravador.controls.helpers.MyFileManager;
+import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
 import br.ufabc.gravador.views.fragments.AnnotationsFragment;
@@ -31,7 +29,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
     private TextView finishedLabel, recordTimeText;
     private Gravacao gravacao = null;
     private AnnotationsFragment fragment = null;
-    private MyFileManager fileManager;
+    private DirectoryHelper directoryHelper;
 
     @SuppressLint( "MissingSuperCall" )
     @Override
@@ -52,13 +50,10 @@ public class RecordAudioActivity extends AbstractServiceActivity
 
     @Override
     protected void onServiceOnline () {
-        fileManager = MyFileManager.getInstance();
-        fileManager.setup(getApplicationContext());
+        directoryHelper = new DirectoryHelper(this);
 
         if ( !gravacaoService.hasGravacao() ) {
-            File f = fileManager.getDirectory(MyFileManager.GRAVACAO_DIR);
-            gravacao = Gravacao.CreateEmpty(f.getPath(), MyFileManager.newTempName());
-            gravacaoService.setGravacao(gravacao);
+            gravacao = gravacaoService.createNewGravacao();
         } else gravacao = gravacaoService.getGravacao();
         fragment.updateGravacao();
 
@@ -175,7 +170,6 @@ public class RecordAudioActivity extends AbstractServiceActivity
     @Override
     protected void onDestroy () {
         super.onDestroy();
-        gravacao.abortIfFailed();
     }
 
     @Override

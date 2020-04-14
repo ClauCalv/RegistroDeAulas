@@ -2,24 +2,28 @@ package br.ufabc.gravador.controls.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
 import android.widget.Toast;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import br.ufabc.gravador.controls.helpers.ConnectionHelper;
-import br.ufabc.gravador.controls.helpers.MyFileManager;
+import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.controls.helpers.NotificationHelper;
 import br.ufabc.gravador.models.Gravacao;
+import br.ufabc.gravador.models.GravacaoHandler;
 
 public class GravacaoService extends Service {
 
@@ -39,15 +43,16 @@ public class GravacaoService extends Service {
     private NotificationHelper notificationHelper;
     private ConnectionHelper connectionHelper;
     private Gravacao gravacao;
+    private GravacaoHandler gh = null;
     private MediaRecorder recorder;
     private MediaPlayer player;
-    private MyFileManager fileManager;
+    private DirectoryHelper dh;
 
     public interface TimeUpdateListener {
         void onTimeUpdate ( long time );
     }
     private TimeUpdateListener registeredTimeListener;
-    private long currentTime = 0, runnableStartTime = 0;
+    private long currentTime = 0, runnableStartTime = 0, timetotal = 0;
     private Handler timeHandler = new Handler();
     private Runnable timeRunnable = new Runnable() {
         @Override
@@ -73,11 +78,16 @@ public class GravacaoService extends Service {
 
     public long getTime () { return currentTime; }
 
+    public long getTimeTotal () { return timetotal; }
+
+    public void setTimeTotal ( long timetotal ) { this.timetotal = timetotal; }
+
     @Override
     public void onCreate () {
         super.onCreate();
         notificationHelper = new NotificationHelper(this);
-        fileManager = MyFileManager.getInstance();
+        dh = new DirectoryHelper(this);
+        if ( gh == null ) gh = new GravacaoHandler(this, dh);
     }
 
     public class LocalBinder extends Binder {
@@ -134,19 +144,22 @@ public class GravacaoService extends Service {
     public void setGravacao ( Gravacao gravacao ) {
         this.gravacao = gravacao;
     }
-
     public boolean hasGravacao () {
         return gravacao != null;
     }
-
     public Gravacao getGravacao () { return gravacao; }
+
+    public Gravacao createNewGravacao () {
+        gravacao = gh.CreateEmpty(DirectoryHelper.newTempName());
+        return gravacao;
+    }
 
     public void prepareForRecord ( int mediaType ) {
         if ( gravacao == null ) return;
         String location = null, extension = null;
         switch ( currMediaType = mediaType ) {
             case MEDIATYPE_AUDIO:
-                location = fileManager.getDirectory(MyFileManager.AUDIO_DIR).getPath();
+                location = dh.getDirectory(DirectoryHelper.AUDIO_DIR).getPath();
                 extension = AUDIO_EXTENSION;
                 break;
             case MEDIATYPE_VIDEO:
@@ -158,9 +171,9 @@ public class GravacaoService extends Service {
                 throw new IllegalArgumentException("Unexpected mediatype: " + mediaType);
         }
 
-        gravacao.setRecordLocation(location);
-        gravacao.setRecordName(MyFileManager.newTempName());
-        gravacao.setRecordExtension(extension);
+        String tempname = DirectoryHelper.newTempName();
+        File f = new File(location, tempname + extension);
+        gravacao.setRecordURI(dh.createURIFromString(f.toString()).toString());
 
         serviceStatus = STATUS_RECORD_PREPARED;
     }
@@ -171,19 +184,20 @@ public class GravacaoService extends Service {
         if ( gravacao == null )
             return false;
 
-        recorder = new MediaRecorder();
-        recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        recorder.setOutputFile(gravacao.getRecordPath());
-        recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-        recorder.setOnErrorListener(( MediaRecorder mr, int what, int extra ) ->
-                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra));
-
         try {
+
+            ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
+            recorder = new MediaRecorder();
+            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            recorder.setOutputFile(fd.getFileDescriptor());
+            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+            recorder.setOnErrorListener(( MediaRecorder mr, int what, int extra ) ->
+                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra));
             recorder.prepare();
         } catch ( IOException e ) {
             Log.e("AudioRecord", "prepare() failed", e);
-            Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG);
+            Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG).show();
             prepareForRecord(MEDIATYPE_NULL);
             return false;
         }
@@ -215,32 +229,37 @@ public class GravacaoService extends Service {
         serviceStatus = STATUS_WAITING_SAVE;
     }
 
-    public interface onGravacaoSavedListener {
-        void onSaved ( boolean success );
+    public void setSaveMode ( boolean record, boolean annotations ) {
+        gh.setSaveMode(record, annotations);
     }
 
-    public void saveGravacaoAssync ( boolean record, boolean annotations, onGravacaoSavedListener l ) {
+    public void saveGravacao ( GravacaoHandler.SaveListener l ) {
         serviceStatus = STATUS_LOADING_SAVING;
-        new Handler().post(new Runnable() {
-            @Override
-            public void run () {
-                l.onSaved(gravacao.saveGravacao(record, annotations));
-                setGravacao(null);
-                goIdle();
-            }
-        });
+        gh.setSaveListener(
+                ( success ) -> {
+                    onGravacaoSaved(success);
+                    if ( l != null ) l.onGravacaoSaved(success);
+                });
+        gh.saveGravacao(gravacao);
     }
 
-    public void renameAndSaveAssync ( String name, onGravacaoSavedListener l ) {
+    public void onGravacaoSaved ( boolean success ) {
+        if ( success ) goIdle();
+        else serviceStatus = STATUS_WAITING_SAVE;
+    }
+
+    public void renameAndSave ( String name, GravacaoHandler.SaveListener l ) {
         serviceStatus = STATUS_LOADING_SAVING;
-        new Handler().post(new Runnable() {
-            @Override
-            public void run () {
-                l.onSaved(gravacao.renameAndSave(name));
-                setGravacao(null);
-                goIdle();
-            }
-        });
+        gh.setSaveListener(
+                ( success ) -> {
+                    onGravacaoSaved(success);
+                    if ( l != null ) l.onGravacaoSaved(success);
+                });
+        gh.renameAndSave(gravacao, name);
+    }
+
+    public void removeRecordAndSave () {
+        gh.removeRecordAndSave(gravacao);
     }
 
     private boolean isPlayerPrepared = false;
@@ -252,7 +271,14 @@ public class GravacaoService extends Service {
             player.reset();
 
         try {
-            player.setDataSource(gravacao.getRecordPath());
+            player.setOnErrorListener(( MediaPlayer mp, int what, int extra ) -> {
+                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra);
+                return false;
+            });
+            Log.wtf("recordURI", gravacao.getRecordURI());
+            Log.wtf("annotationsURI", gravacao.getAnnotationURI());
+            ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
+            player.setDataSource(fd.getFileDescriptor());
             player.setLooping(false);
             player.prepare();
             isPlayerPrepared = true;
@@ -276,10 +302,11 @@ public class GravacaoService extends Service {
         try {
             if ( playPause ) {
                 long time = currentTime;
+                mAudioManager.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_MUSIC,
+                        AudioManager.AUDIOFOCUS_GAIN);
                 player.start();
                 startTimer(time);
                 goForeground();
-                Log.wtf("AAAAAAAAAAAAAAAA", gravacao.getRecordPath());
             } else {
                 player.pause();
                 stopTimer();
@@ -287,6 +314,10 @@ public class GravacaoService extends Service {
 
             buildPlayPauseNotification(playPause);
             serviceStatus = playPause ? STATUS_PLAYING : STATUS_PAUSED;
+
+            if ( playPause )
+                if ( !player.isPlaying() )
+                    throw new IllegalStateException("Failed silently");
 
         } catch ( IllegalStateException e ) {
             Log.e("AudioPlayer", "bad state", e);
