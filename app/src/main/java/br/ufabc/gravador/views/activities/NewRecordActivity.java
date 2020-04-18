@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -14,12 +13,15 @@ public class NewRecordActivity extends AbstractMenuActivity {
 
     Button recordAudio, recordVideo;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_new_record, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_new_record;
+    }
 
-        if ( !this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA) )
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+
+        if (!this.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_ANY))
             recordVideo.setEnabled(false);
 
         recordAudio = findViewById(R.id.recordAudio);

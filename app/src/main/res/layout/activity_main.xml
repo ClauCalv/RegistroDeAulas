@@ -6,17 +6,6 @@
     android:layout_height="match_parent"
     tools:context="br.ufabc.gravador.views.activities.MainActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/my_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:layout_constraintTop_toTopOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        tools:layout_editor_absoluteX="0dp" />
-
     <Button
         android:id="@+id/initRecord"
         android:layout_width="0dp"
@@ -26,21 +15,18 @@
         app:layout_constraintBottom_toTopOf="@+id/joinHostRecord"
         app:layout_constraintEnd_toEndOf="@+id/joinHostRecord"
         app:layout_constraintStart_toStartOf="@+id/joinHostRecord"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <Button
         android:id="@+id/joinHostRecord"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
         android:text="@string/string_viewHostRecordButton"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/viewRecords"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.503"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar" />
+        app:layout_constraintTop_toBottomOf="@+id/initRecord" />
 
     <Button
         android:id="@+id/viewRecords"
@@ -52,4 +38,5 @@
         app:layout_constraintEnd_toEndOf="@+id/joinHostRecord"
         app:layout_constraintStart_toStartOf="@+id/joinHostRecord"
         app:layout_constraintTop_toBottomOf="@+id/joinHostRecord" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

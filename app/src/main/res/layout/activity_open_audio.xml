@@ -7,58 +7,27 @@
     android:layout_height="match_parent"
     tools:context="br.ufabc.gravador.views.activities.RecordAudioActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/my_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:layout_constraintTop_toTopOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        tools:layout_editor_absoluteX="0dp" />
-
-    <Space
-        android:id="@+id/topReference"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias="0.3" />
-
     <fragment
         android:id="@+id/annotationsFragment"
         android:name="br.ufabc.gravador.views.fragments.AnnotationsFragment"
-
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomReference"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topReference" />
-
-    <Space
-        android:id="@+id/bottomReference"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="invisible"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias="0.95" />
+        app:layout_constraintTop_toBottomOf="@id/progressBar" />
+
 
     <br.ufabc.gravador.views.widgets.DottedSeekBar
         android:id="@+id/progressBar"
         android:layout_width="0dp"
-        android:layout_height="0dp"
+        android:layout_height="32dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/topReference"
+        app:layout_constraintBottom_toTopOf="@id/annotationsFragment"
         app:layout_constraintEnd_toStartOf="@+id/timeStamp"
         app:layout_constraintStart_toStartOf="@+id/annotationsFragment"
         app:layout_constraintTop_toBottomOf="@+id/startStopPlaying"
@@ -68,10 +37,10 @@
         android:id="@+id/startStopPlaying"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:layout_constraintBottom_toTopOf="@+id/annotationsFragment"
+        app:layout_constraintBottom_toTopOf="@+id/progressBar"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
+        app:layout_constraintTop_toBottomOf="@+id/recordName"
         app:srcCompat="@drawable/ic_media_play" />
 
     <ImageButton
@@ -110,11 +79,13 @@
         android:id="@+id/recordName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="16dp"
         android:text="Nome da gravação"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         app:layout_constraintBottom_toTopOf="@+id/startStopPlaying"
         app:layout_constraintEnd_toEndOf="@+id/annotationsFragment"
         app:layout_constraintStart_toStartOf="@+id/annotationsFragment"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar" />
+        app:layout_constraintTop_toTopOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

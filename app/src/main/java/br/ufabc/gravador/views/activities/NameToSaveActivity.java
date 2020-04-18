@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.view.MenuItem;
 import android.view.View;
@@ -12,7 +11,7 @@ import java.util.regex.Pattern;
 
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.models.GravacaoHandler;
+import br.ufabc.gravador.models.GravacaoManager;
 
 public class NameToSaveActivity extends AbstractServiceActivity {
 
@@ -20,10 +19,14 @@ public class NameToSaveActivity extends AbstractServiceActivity {
     private TextView recordName;
     private Gravacao gravacao;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_name_to_save, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_name_to_save;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         saveRecordName = findViewById(R.id.saveRecordName);
         saveRecordName.setOnClickListener(this::saveRecordNameOnClick);
@@ -52,7 +55,7 @@ public class NameToSaveActivity extends AbstractServiceActivity {
         }
 
         gravacaoService.renameAndSave(recordName.getText().toString(),
-                new GravacaoHandler.SaveListener() {
+                new GravacaoManager.SaveListener() {
                     @Override
                     public void onGravacaoSaved ( boolean success ) {
                         if ( success ) {

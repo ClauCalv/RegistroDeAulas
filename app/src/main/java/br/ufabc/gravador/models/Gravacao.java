@@ -108,11 +108,9 @@ public class Gravacao {
         return false;
     }
 
-    public boolean saveXML ( StringWriter writer, boolean saveRecord, boolean saveAnnotations ) {
+    public boolean saveXML(StringWriter writer) {
         isSaving = true;
         try {
-            Log.wtf("saveXML",
-                    saveRecord + ", " + hasRecord() + ", " + saveAnnotations + ", " + hasAnnotation());
             XmlSerializer xmlSerializer = Xml.newSerializer();
             xmlSerializer.setOutput(writer);
             xmlSerializer.startDocument("UTF-8", true);
@@ -122,13 +120,13 @@ public class Gravacao {
             xmlSerializer.text(annotationName);
             xmlSerializer.endTag(null, "Name");
 
-            if ( saveRecord && hasRecord() ) {
+            if (hasRecord()) {
                 xmlSerializer.startTag(null, "Record");
                 xmlSerializer.text(getRecordURI());
                 xmlSerializer.endTag(null, "Record");
             }
 
-            if ( saveAnnotations && hasAnnotation() ) {
+            if (hasAnnotation()) {
                 xmlSerializer.startTag(null, "Annotations");
                 for ( int i = 0; i < annotations.size(); i++ )
                     annotations.valueAt(i).saveAnnotation(xmlSerializer);

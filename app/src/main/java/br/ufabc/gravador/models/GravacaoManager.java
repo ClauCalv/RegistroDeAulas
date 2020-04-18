@@ -16,21 +16,18 @@ import java.io.StringWriter;
 
 import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 
-public class GravacaoHandler {
+public class GravacaoManager {
 
     private Context context;
     private DirectoryHelper dh;
     private SaveListener listener;
 
-    private boolean isSet = false;
-    private boolean saveRecord, saveAnnotation;
-
-    public GravacaoHandler ( Context context ) {
+    public GravacaoManager(Context context) {
         this.context = context;
         this.dh = new DirectoryHelper(context);
     }
 
-    public GravacaoHandler ( Context context, DirectoryHelper dh ) {
+    public GravacaoManager(Context context, DirectoryHelper dh) {
         this.context = context;
         this.dh = dh;
     }
@@ -62,18 +59,9 @@ public class GravacaoHandler {
 
     public SaveListener getSaveListener () {return listener;}
 
-    public GravacaoHandler setSaveMode ( boolean saveRecord, boolean saveAnnotation ) {
-        this.saveRecord = saveRecord;
-        this.saveAnnotation = saveAnnotation;
-        isSet = true;
-        return this;
-    }
-
     public void saveGravacao ( Gravacao gravacao ) {
         FileDescriptor fd = dh.openFdFromString(gravacao.getAnnotationURI()).getFileDescriptor();
-        if ( !isSet ) throw new IllegalArgumentException("setSaveMode not called");
-        new AsyncSave(gravacao, fd, listener).execute(saveRecord, saveAnnotation);
-        saveRecord = saveAnnotation = true;
+        new AsyncSave(gravacao, fd, listener).execute();
     }
 
     public boolean renameAndSave ( Gravacao gravacao, String annotationName ) {
@@ -91,7 +79,6 @@ public class GravacaoHandler {
 
     public void removeRecordAndSave ( Gravacao gravacao ) {
         gravacao.recordURI = null;
-        setSaveMode(false, true);
         saveGravacao(gravacao);
     }
 
@@ -99,7 +86,7 @@ public class GravacaoHandler {
         void onGravacaoSaved ( boolean success );
     }
 
-    private static class AsyncSave extends AsyncTask<Boolean, Void, Boolean> {
+    private static class AsyncSave extends AsyncTask<Void, Void, Boolean> {
 
         private SaveListener listener;
         private StringWriter writer;
@@ -120,8 +107,8 @@ public class GravacaoHandler {
         }
 
         @Override
-        protected Boolean doInBackground ( Boolean... params ) {
-            if ( !g.saveXML(writer, params[0], params[1]) ) return false;
+        protected Boolean doInBackground(Void... unused) {
+            if (!g.saveXML(writer)) return false;
 
             try {
                 fos.write(writer.toString().getBytes());

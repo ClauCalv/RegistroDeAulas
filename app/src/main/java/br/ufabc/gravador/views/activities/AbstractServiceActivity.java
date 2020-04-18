@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.view.ViewGroup;
 
+import androidx.annotation.CallSuper;
 import androidx.core.widget.ContentLoadingProgressBar;
 
 import br.ufabc.gravador.R;
@@ -18,18 +19,25 @@ public abstract class AbstractServiceActivity extends AbstractMenuActivity {
     protected GravacaoService gravacaoService;
     protected ServiceConnection serviceConnection;
     protected boolean isBound = false;
+    private boolean superCalled = false;
 
     private ContentLoadingProgressBar progressBar;
 
-    @Override
-    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled ) {
-        super.onCreate(savedInstanceState, LayoutID, ToolbarID, homeEnabled);
+    @CallSuper
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        superCalled = true;
 
         ViewGroup rootView = (ViewGroup) ( (ViewGroup) findViewById(
                 android.R.id.content) ).getChildAt(0);
         getLayoutInflater().inflate(R.layout.content_loading_progress_bar, rootView, true);
         progressBar = rootView.findViewById(R.id.server_progress_bar);
+    }
 
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if (!superCalled)
+            throw new UnsupportedOperationException("Must call \"super.onSuperCreate\"!");
     }
 
     @Override

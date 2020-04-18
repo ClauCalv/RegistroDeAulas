@@ -20,6 +20,7 @@ public class NotificationHelper {
 
     public static String CHANNEL_DEFAULT_IMPORTANCE = "Default";
     public static int RECORD_REQUEST_CODE = 6001, SAVE_REQUEST_CODE = 6002, PLAY_REQUEST_CODE = 6003;
+    private static int NOTIFICATION_ICON = R.drawable.ic_stat_name;
 
     public static int NO_FLAG = 0;
 
@@ -65,7 +66,7 @@ public class NotificationHelper {
     public Notification newSaveNotification ( PendingIntent pendingIntent ) {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
-                .setSmallIcon(R.drawable.ic_launcher_background)//TODO
+                .setSmallIcon(NOTIFICATION_ICON)//TODO
                 .setContentTitle("Gravação encerrada") //TODO hardcoded
                 .setContentText("Toque para salvar a gravação") //TODO hardcoded
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -78,7 +79,7 @@ public class NotificationHelper {
     public Notification newPlayAudioNotification ( PendingIntent pendingIntent, String name, boolean isPlaying ) {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
-                .setSmallIcon(R.drawable.ic_launcher_background)//TODO
+                .setSmallIcon(NOTIFICATION_ICON)//TODO
                 .setContentTitle("Reproduzindo " + name) //TODO hardcoded
                 .setContentText("Toque para editar a gravação") //TODO hardcoded
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -104,7 +105,7 @@ public class NotificationHelper {
     public Notification newRecordAudioNotification ( PendingIntent pendingIntent ) {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
-                .setSmallIcon(R.drawable.ic_launcher_background)//TODO
+                .setSmallIcon(NOTIFICATION_ICON)//TODO
                 .setContentTitle("Gravação em andamento") //TODO hardcoded
                 .setContentText("Toque para editar a gravação") //TODO hardcoded
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -116,7 +117,7 @@ public class NotificationHelper {
     public Notification newBlankNotification () {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
-                .setSmallIcon(R.drawable.ic_launcher_background)//TODO
+                .setSmallIcon(NOTIFICATION_ICON)//TODO
                 .setContentTitle("Registro de Aulas está aberto") //TODO hardcoded
                 .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                 .setAutoCancel(false);

@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -31,10 +30,14 @@ public class RecordAudioActivity extends AbstractServiceActivity
     private AnnotationsFragment fragment = null;
     private DirectoryHelper directoryHelper;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_record_audio, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_record_audio;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         startStop = findViewById(R.id.startRecording);
         startStop.setOnClickListener(this::startStopOnClick);
@@ -124,7 +127,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
 
     public void onAnnotationSaved () {
         Intent intent = new Intent(RecordAudioActivity.this,
-                SaveGravacaoActivity.class);
+                NameToSaveActivity.class);
         intent.putExtra("RequestCode", AUDIO_REQUEST);
         startActivityForResult(intent, AUDIO_REQUEST);
     }

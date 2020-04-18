@@ -6,136 +6,30 @@
     android:layout_height="match_parent"
     tools:context="br.ufabc.gravador.views.activities.AnnotationOnTransmissionActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/my_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:layout_constraintTop_toTopOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        tools:layout_editor_absoluteX="0dp" />
-
-    <Spinner
-        android:id="@+id/annotationsSelector"
-        android:layout_width="0dp"
-        android:layout_height="40dp"
-        android:entries="@array/gravacoes"
-        android:spinnerMode="dropdown"
-        app:layout_constraintEnd_toEndOf="@+id/annotationView"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/annotationView"
-        app:layout_constraintTop_toTopOf="@+id/annotationView" />
-
-    <EditText
-        android:id="@+id/annotationContent"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:ems="10"
-        android:gravity="start|top"
-        android:hint="Insira comentários na marcação ou adicione uma foto pelo botão abaixo"
-        android:inputType="textMultiLine"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        app:layout_constraintBottom_toTopOf="@+id/annotationSave"
-        app:layout_constraintEnd_toEndOf="@+id/annotationsSelector"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="@+id/annotationsSelector"
-        app:layout_constraintTop_toBottomOf="@+id/annotationName" />
-
-    <EditText
-        android:id="@+id/annotationName"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:ems="10"
-        android:inputType="textPersonName"
-        android:text="Anotação 1"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintEnd_toStartOf="@+id/annotationTime"
-        app:layout_constraintStart_toStartOf="@+id/annotationsSelector"
-        app:layout_constraintTop_toBottomOf="@+id/annotationsSelector" />
-
-    <ImageButton
-        android:id="@+id/annotationNewButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@+id/annotationName"
-        app:layout_constraintEnd_toEndOf="@+id/annotationsSelector"
-        app:layout_constraintTop_toBottomOf="@+id/annotationsSelector"
-        app:srcCompat="@android:drawable/ic_menu_edit" />
-
-    <TextView
-        android:id="@+id/annotationTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:text="00:00"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toBottomOf="@+id/annotationNewButton"
-        app:layout_constraintEnd_toStartOf="@+id/annotationNewButton"
-        app:layout_constraintTop_toTopOf="@+id/annotationNewButton" />
-
-    <ImageButton
-        android:id="@+id/annotationTakePicture"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="@+id/annotationView"
-        app:layout_constraintStart_toStartOf="@+id/annotationView"
-        app:srcCompat="@android:drawable/ic_menu_camera" />
-
-    <Button
-        android:id="@+id/annotationSave"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Salvar"
-        android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toBottomOf="@+id/annotationView"
-        app:layout_constraintEnd_toEndOf="@+id/annotationView"
-        app:layout_constraintTop_toTopOf="@+id/annotationTakePicture" />
-
-    <View
-        android:id="@+id/annotationView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        app:layout_constraintBottom_toTopOf="@+id/bottomReference"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/topReference" />
-
-    <Space
-        android:id="@+id/topReference"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias="0.2" />
-
-    <Space
-        android:id="@+id/bottomReference"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias="0.65" />
-
     <Button
         android:id="@+id/annotationReturn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
         android:text="Voltar para a transmissão"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toTopOf="@+id/topReference"
+        app:layout_constraintBottom_toTopOf="@+id/fragment"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias="0.6" />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <fragment
+        android:id="@+id/fragment"
+        android:name="br.ufabc.gravador.views.fragments.AnnotationsFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/annotationReturn" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -12,23 +12,22 @@ public class JoinRoomActivity extends AbstractServiceActivity {
     Button readQRCode, joinRoomConfirm;
     TextView roomName;
 
-    @SuppressWarnings( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_join_room, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_join_room;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         readQRCode = findViewById(R.id.readQRCode);
         joinRoomConfirm = findViewById(R.id.joinRoomConfirm);
-        roomName = findViewById(R.id.RoomName);
+        roomName = findViewById(R.id.roomName);
 
         readQRCode.setOnClickListener(this::readQRCodeOnClick);
 
         joinRoomConfirm.setOnClickListener(this::joinRoomConfirmOnClick);
-    }
-
-    @Override
-    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled ) {
-
     }
 
     @Override

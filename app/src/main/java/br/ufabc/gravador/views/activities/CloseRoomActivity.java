@@ -2,17 +2,23 @@ package br.ufabc.gravador.views.activities;
 
 import android.os.Bundle;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import br.ufabc.gravador.R;
 
-//TODO extend abstractMenuActivity
-public class CloseRoomActivity extends AppCompatActivity {
+public class CloseRoomActivity extends AbstractServiceActivity {
 
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_close_room);
+    protected int getLayoutID() {
+        return R.layout.activity_close_room;
     }
 
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
+        //TODO
+    }
+
+    @Override
+    protected void onServiceOnline() {
+        //TODO
+    }
 }

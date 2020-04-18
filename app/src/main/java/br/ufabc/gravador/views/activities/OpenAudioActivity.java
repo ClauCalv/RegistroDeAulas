@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.MenuItem;
@@ -31,10 +30,14 @@ public class OpenAudioActivity extends AbstractServiceActivity
     private Gravacao gravacao = null;
     private AnnotationsFragment fragment = null;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_open_audio, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_open_audio;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         startStop = findViewById(R.id.startStopPlaying);
         startStop.setOnClickListener(this::startStopOnClick);
@@ -91,6 +94,16 @@ public class OpenAudioActivity extends AbstractServiceActivity
         progressBar.setDots(gravacao.getAnnotationTimes());
         progressBar.setMax(recordDuration = (int) gravacaoService.getTimeTotal());
         progressBar.invalidate();
+
+        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
+            @Override
+            public void onTimeUpdate(long time) {
+                if (timeStamp != null)
+                    timeStamp.setText(Gravacao.formatTime(time));
+                if (progressBar != null)
+                    progressBar.setProgress((int) time);
+            }
+        });
     }
 
     @Override
@@ -122,6 +135,7 @@ public class OpenAudioActivity extends AbstractServiceActivity
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)
                             .show(); //TODO hardcoded
                 }
+                break;
             case GravacaoService.STATUS_PLAYING:
                 if ( gravacaoService.startPausePlaying(false) ) {
                     startStop.setImageResource(play);
@@ -129,6 +143,7 @@ public class OpenAudioActivity extends AbstractServiceActivity
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)
                             .show(); //TODO hardcoded
                 }
+                break;
         }
     }
 
@@ -174,7 +189,6 @@ public class OpenAudioActivity extends AbstractServiceActivity
     protected void onPause () {
         super.onPause();
         fragment.alertSave(() -> {
-            gravacaoService.setSaveMode(true, true);
             gravacaoService.saveGravacao(null);
         });
         //TODO SALVAR MESMO??????

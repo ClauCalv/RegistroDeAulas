@@ -1,15 +1,17 @@
 package br.ufabc.gravador.views.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
 
+import androidx.annotation.LayoutRes;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.fragment.app.Fragment;
 
 import br.ufabc.gravador.R;
 
@@ -18,55 +20,57 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
     protected Toolbar myToolbar;
     protected ActionBar myActionBar;
 
-    @SuppressWarnings( "MissingSuperCall" )
+    protected View activityView;
+
+    protected ImageButton menuHelp, menuConfig, menuLibras;
+
+    protected abstract void onSuperCreate(@Nullable Bundle savedInstanceState);
+
+    @LayoutRes
+    protected abstract int getLayoutID();
+
+    /*
+     * Child class should not call this method via super, especially in the onSuperCreate
+     */
     @Override
-    protected void onCreate ( @Nullable Bundle savedInstanceState ) {
-        throw new UnsupportedOperationException("DO NOT CALL THIS METHOD!");
-    }
-
-    protected void onCreate ( Bundle savedInstanceState, int LayoutID, int ToolbarID, boolean homeEnabled ) {
+    protected final void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(LayoutID);
+        int LayoutID = getLayoutID();
+        setContentView(R.layout.activity_abstract_menu);
 
-        myToolbar = findViewById(ToolbarID);
+        myToolbar = findViewById(R.id.top_toolbar);
         setSupportActionBar(myToolbar);
         myActionBar = getSupportActionBar();
-        myActionBar.setDisplayHomeAsUpEnabled(homeEnabled);
+        myActionBar.setDisplayShowHomeEnabled(false);
+        myActionBar.setDisplayShowTitleEnabled(false);
+        myActionBar.setDisplayOptions(ActionBar.DISPLAY_SHOW_CUSTOM, ActionBar.DISPLAY_SHOW_CUSTOM);
+        myActionBar.setDisplayShowCustomEnabled(true);
+
+        FrameLayout fl = findViewById(R.id.activity_placeholder);
+        activityView = LayoutInflater.from(this).inflate(LayoutID, fl, true);
+
+        menuHelp = findViewById(R.id.menu_help);
+        menuHelp.setOnClickListener(this::menuHelpOnClick);
+
+        menuConfig = findViewById(R.id.menu_config);
+        menuConfig.setOnClickListener(this::menuConfigOnClick);
+
+        menuLibras = findViewById(R.id.menu_libras);
+        menuLibras.setOnClickListener(this::menuLibrasOnClick);
+
+        onSuperCreate(savedInstanceState);
     }
 
-    @Override
-    public boolean onOptionsItemSelected ( MenuItem item ) {
-        switch ( item.getItemId() ) {
-            case R.id.action_settings:
-                // settings
-                return true;
-            case R.id.action_info:
-                // info
-                return true;
-            case R.id.action_welcome:
-                // welcome
-                return true;
-            case R.id.action_legal:
-                // legal
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
-        }
+    void menuHelpOnClick(View view) {
+        Intent intent = new Intent(this, HelpActivity.class);
+        startActivity(intent);
     }
 
-    @Override
-    public boolean onCreateOptionsMenu ( Menu menu ) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
+    void menuConfigOnClick(View view) {
+        //TODO
     }
 
-    public static abstract class RetainedFragment extends Fragment {
-
-        @Override
-        public void onCreate ( Bundle savedInstanceState ) {
-            super.onCreate(savedInstanceState);
-            setRetainInstance(true);
-        }
+    void menuLibrasOnClick(View view) {
+        //TODO
     }
 }

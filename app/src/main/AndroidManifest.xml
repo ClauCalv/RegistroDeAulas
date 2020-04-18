@@ -25,8 +25,9 @@
         android:requestLegacyExternalStorage="true"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/AppTheme.NoActionBar"
+        android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".views.activities.HelpActivity"></activity>
 
         <service
             android:name=".controls.services.GravacaoService"
@@ -50,10 +51,7 @@
         <activity android:name=".views.activities.VideoRecordActivity" /> <!-- TODO -->
         <activity android:name=".views.activities.CloseRoomActivity" />
         <activity android:name=".views.activities.CreateRoomActivity" />
-        <activity
-            android:name=".views.activities.NameToSaveActivity"
-            android:parentActivityName=".views.activities.SaveGravacaoActivity" />
-        <activity android:name=".views.activities.SaveGravacaoActivity" />
+        <activity android:name=".views.activities.NameToSaveActivity" />
         <activity android:name=".views.activities.AnnotationOnTransmissionActivity" />
         <activity android:name=".views.activities.JoinRoomActivity" />
         <activity

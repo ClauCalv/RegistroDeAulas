@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.media.MediaScannerConnection;
 import android.net.Uri;
@@ -24,7 +23,7 @@ import java.util.List;
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.models.GravacaoHandler;
+import br.ufabc.gravador.models.GravacaoManager;
 
 public class ViewGravacoesActivity extends AbstractServiceActivity {
 
@@ -44,11 +43,14 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
         }
     };
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_view_recordings, R.id.my_toolbar,
-                true);
+    protected int getLayoutID() {
+        return R.layout.activity_view_recordings;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         dh = new DirectoryHelper(this);
 
@@ -111,7 +113,7 @@ public class ViewGravacoesActivity extends AbstractServiceActivity {
     }
 
     public void loadFiles () {
-        GravacaoHandler gh = new GravacaoHandler(this, dh);
+        GravacaoManager gh = new GravacaoManager(this, dh);
 
         MediaScannerConnection.scanFile(this,
                 new String[]{dh.getDirectory(DirectoryHelper.GRAVACAO_DIR).toString()},

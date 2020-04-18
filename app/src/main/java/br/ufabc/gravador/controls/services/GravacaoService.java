@@ -2,10 +2,13 @@ package br.ufabc.gravador.controls.services;
 
 import android.app.Service;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
@@ -23,7 +26,7 @@ import br.ufabc.gravador.controls.helpers.ConnectionHelper;
 import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.controls.helpers.NotificationHelper;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.models.GravacaoHandler;
+import br.ufabc.gravador.models.GravacaoManager;
 
 public class GravacaoService extends Service {
 
@@ -43,10 +46,13 @@ public class GravacaoService extends Service {
     private NotificationHelper notificationHelper;
     private ConnectionHelper connectionHelper;
     private Gravacao gravacao;
-    private GravacaoHandler gh = null;
+    private GravacaoManager gh = null;
     private MediaRecorder recorder;
     private MediaPlayer player;
     private DirectoryHelper dh;
+    private AudioManager audioManager;
+    private AudioAttributes audioAttributes;
+    private AudioFocusRequest focusRequest;
 
     public interface TimeUpdateListener {
         void onTimeUpdate ( long time );
@@ -58,7 +64,7 @@ public class GravacaoService extends Service {
         @Override
         public void run () {
             currentTime = SystemClock.uptimeMillis() - runnableStartTime;
-            timeHandler.postDelayed(this, 500);
+            timeHandler.postDelayed(this, timetotal > 20000 ? 500 : 200);
             onTimeUpdate();
         }
     };
@@ -87,7 +93,7 @@ public class GravacaoService extends Service {
         super.onCreate();
         notificationHelper = new NotificationHelper(this);
         dh = new DirectoryHelper(this);
-        if ( gh == null ) gh = new GravacaoHandler(this, dh);
+        if (gh == null) gh = new GravacaoManager(this, dh);
     }
 
     public class LocalBinder extends Binder {
@@ -229,11 +235,7 @@ public class GravacaoService extends Service {
         serviceStatus = STATUS_WAITING_SAVE;
     }
 
-    public void setSaveMode ( boolean record, boolean annotations ) {
-        gh.setSaveMode(record, annotations);
-    }
-
-    public void saveGravacao ( GravacaoHandler.SaveListener l ) {
+    public void saveGravacao(GravacaoManager.SaveListener l) {
         serviceStatus = STATUS_LOADING_SAVING;
         gh.setSaveListener(
                 ( success ) -> {
@@ -248,7 +250,7 @@ public class GravacaoService extends Service {
         else serviceStatus = STATUS_WAITING_SAVE;
     }
 
-    public void renameAndSave ( String name, GravacaoHandler.SaveListener l ) {
+    public void renameAndSave(String name, GravacaoManager.SaveListener l) {
         serviceStatus = STATUS_LOADING_SAVING;
         gh.setSaveListener(
                 ( success ) -> {
@@ -271,6 +273,14 @@ public class GravacaoService extends Service {
             player.reset();
 
         try {
+            audioManager = (AudioManager) getSystemService(AUDIO_SERVICE);
+            audioAttributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                    .build();
+
+            player.setAudioAttributes(audioAttributes);
+
             player.setOnErrorListener(( MediaPlayer mp, int what, int extra ) -> {
                 Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra);
                 return false;
@@ -301,14 +311,25 @@ public class GravacaoService extends Service {
 
         try {
             if ( playPause ) {
+                if (Build.VERSION.SDK_INT >= 26) {
+                    focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                            .setAudioAttributes(audioAttributes)
+                            .setAcceptsDelayedFocusGain(false)
+                            .setWillPauseWhenDucked(false)
+                            .build();
+                    audioManager.requestAudioFocus(focusRequest);
+                } else
+                    audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+
                 long time = currentTime;
-                mAudioManager.requestAudioFocus(mAudioFocusListener, AudioManager.STREAM_MUSIC,
-                        AudioManager.AUDIOFOCUS_GAIN);
                 player.start();
                 startTimer(time);
                 goForeground();
             } else {
                 player.pause();
+                if (Build.VERSION.SDK_INT >= 26)
+                    audioManager.abandonAudioFocusRequest(focusRequest);
+                else audioManager.abandonAudioFocus(null);
                 stopTimer();
             }
 

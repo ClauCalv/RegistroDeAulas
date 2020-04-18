@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
@@ -13,10 +12,13 @@ public class SharedRecordActivity extends AbstractMenuActivity {
 
     Button joinRoom, newRoom;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_shared_record, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_shared_record;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
 
         joinRoom = findViewById(R.id.joinRoom);
         newRoom = findViewById(R.id.newRoom);

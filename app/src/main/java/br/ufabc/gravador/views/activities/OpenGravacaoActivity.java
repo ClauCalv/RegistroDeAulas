@@ -1,6 +1,5 @@
 package br.ufabc.gravador.views.activities;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -25,10 +24,14 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
     private boolean hasRecord = false, hasAnnotation = false;
     private DirectoryHelper dh;
 
-    @SuppressLint( "MissingSuperCall" )
     @Override
-    protected void onCreate ( Bundle savedInstanceState ) {
-        super.onCreate(savedInstanceState, R.layout.activity_open_gravacao, R.id.my_toolbar, true);
+    protected int getLayoutID() {
+        return R.layout.activity_open_gravacao;
+    }
+
+    @Override
+    protected void onSuperCreate(Bundle savedInstanceState) {
+        super.onSuperCreate(savedInstanceState);
 
         changeRecord = findViewById(R.id.changeRecord);
         changeRecord.setOnClickListener(this::changeRecordOnClick);

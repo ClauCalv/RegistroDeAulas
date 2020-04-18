@@ -6,28 +6,16 @@
     android:layout_height="match_parent"
     tools:context="br.ufabc.gravador.views.activities.NameToSaveActivity">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/my_toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="60dp"
-        android:background="@color/colorPrimary"
-        android:elevation="4dp"
-        android:theme="@style/ThemeOverlay.AppCompat.ActionBar"
-        app:layout_constraintTop_toTopOf="parent"
-        app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-        tools:layout_editor_absoluteX="0dp" />
-
     <TextView
         android:id="@+id/textViewRecordName"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Insira o nome da gravação:"
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/saveRecordName"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias=".33333" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <EditText
         android:id="@+id/recordName"
@@ -36,6 +24,7 @@
         android:ems="10"
         android:inputType="textPersonName"
         app:layout_constraintEnd_toEndOf="@+id/textViewRecordName"
+        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="@+id/textViewRecordName"
         app:layout_constraintTop_toBottomOf="@+id/textViewRecordName" />
 
@@ -47,8 +36,8 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Large"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.498"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/my_toolbar"
-        app:layout_constraintVertical_bias=".66666" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewRecordName" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
