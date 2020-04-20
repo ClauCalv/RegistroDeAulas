@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.constraintlayout.widget.Group;
 
 import br.ufabc.gravador.R;
 
@@ -21,6 +22,7 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
     protected ActionBar myActionBar;
 
     protected View activityView;
+    protected Group menuGroup;
 
     protected ImageButton menuHelp, menuConfig, menuLibras;
 
@@ -57,6 +59,8 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
 
         menuLibras = findViewById(R.id.menu_libras);
         menuLibras.setOnClickListener(this::menuLibrasOnClick);
+
+        menuGroup = findViewById(R.id.group_menu_itens);
 
         onSuperCreate(savedInstanceState);
     }

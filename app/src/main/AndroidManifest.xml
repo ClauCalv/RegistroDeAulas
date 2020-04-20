@@ -27,8 +27,6 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".views.activities.HelpActivity"></activity>
-
         <service
             android:name=".controls.services.GravacaoService"
             android:enabled="true"
@@ -44,11 +42,13 @@
                 android:resource="@xml/provider_paths" />
         </provider>
 
+        <activity android:name=".views.activities.OpenVideoActivity" />
+        <activity android:name=".views.activities.RecordVideoActivity" />
+        <activity android:name=".views.activities.HelpActivity" />
         <activity android:name=".views.activities.OpenAudioActivity" />
         <activity
             android:name=".views.activities.OpenGravacaoActivity"
             android:parentActivityName=".views.activities.ViewGravacoesActivity" />
-        <activity android:name=".views.activities.VideoRecordActivity" /> <!-- TODO -->
         <activity android:name=".views.activities.CloseRoomActivity" />
         <activity android:name=".views.activities.CreateRoomActivity" />
         <activity android:name=".views.activities.NameToSaveActivity" />

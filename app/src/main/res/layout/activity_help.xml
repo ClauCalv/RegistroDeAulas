@@ -11,11 +11,13 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <?ignore source:"https://github.com/ongakuer/CircleIndicator" ?>
     <me.relex.circleindicator.CircleIndicator3
         android:id="@+id/indicator"
         android:layout_width="match_parent"
-        android:layout_height="48dp"
-        app:ci_gravity="fill_horizontal"
+        android:layout_height="24dp"
+        app:ci_drawable="@drawable/indicator_marker_selected"
+        app:ci_drawable_unselected="@drawable/indicator_marker"
         app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

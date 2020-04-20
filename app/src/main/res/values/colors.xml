@@ -20,6 +20,8 @@
     <color name="colorPickerYellow">#ffff00</color>
     <color name="colorPickerOrange">#ff8800</color>
 
+    <color name="black_overlay">#66000000</color>
+
     <?ignore  27 cores básicas<color name="ColorPickerCyan">#fff</color><color name="ColorPickerCyan">#ff9</color><color name="ColorPickerCyan">#ff0</color><color name="ColorPickerCyan">#f9f</color><color name="ColorPickerCyan">#f99</color><color name="ColorPickerCyan">#f90</color><color name="ColorPickerCyan">#f0f</color><color name="ColorPickerCyan">#f09</color><color name="ColorPickerCyan">#f00</color><color name="ColorPickerCyan">#9ff</color><color name="ColorPickerCyan">#9f9</color><color name="ColorPickerCyan">#9f0</color><color name="ColorPickerCyan">#99f</color><color name="ColorPickerCyan">#999</color><color name="ColorPickerCyan">#990</color><color name="ColorPickerCyan">#90f</color><color name="ColorPickerCyan">#909</color><color name="ColorPickerCyan">#900</color><color name="ColorPickerCyan">#0ff</color><color name="ColorPickerCyan">#0f9</color><color name="ColorPickerCyan">#0f0</color><color name="ColorPickerCyan">#09f</color><color name="ColorPickerCyan">#099</color><color name="ColorPickerCyan">#090</color><color name="ColorPickerCyan">#00f</color><color name="ColorPickerCyan">#009</color><color name="ColorPickerCyan">#000</color>?>
 
 </resources>

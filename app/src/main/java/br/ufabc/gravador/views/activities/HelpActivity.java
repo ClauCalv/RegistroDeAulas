@@ -41,14 +41,6 @@ public class HelpActivity extends AbstractMenuActivity {
         pagerAdapter.registerAdapterDataObserver(indicator.getAdapterDataObserver());
     }
 
-    @Override
-    public void onBackPressed() {
-        if (viewPager.getCurrentItem() == 0)
-            super.onBackPressed();
-        else
-            viewPager.setCurrentItem(viewPager.getCurrentItem() - 1);
-    }
-
     private class ScreenSlidePagerAdapter extends FragmentStateAdapter {
         public ScreenSlidePagerAdapter(FragmentActivity fa) {
             super(fa);
@@ -71,5 +63,6 @@ public class HelpActivity extends AbstractMenuActivity {
         public int getItemCount() {
             return NUM_PAGES;
         }
+
     }
 }

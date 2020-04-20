@@ -122,14 +122,14 @@ public class OpenGravacaoActivity extends AbstractServiceActivity {
             if ( mimetype.startsWith("audio") )
                 intent = new Intent(this, OpenAudioActivity.class);
             else if ( mimetype.startsWith("video") )
-                ;//TODO
+                intent = new Intent(this, OpenVideoActivity.class);
             else
                 ;//TODO
 
             if ( intent != null ) {
                 gravacaoService.setTimeTotal(Long.valueOf(duration));
                 startActivity(intent);
-                gravacaoService.prepareForPlaying();
+//                gravacaoService.prepareForPlaying();
                 return;
             }
         }

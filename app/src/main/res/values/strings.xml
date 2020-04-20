@@ -12,9 +12,4 @@
     <string name="action_settings">Configurações</string>
     <string name="action_legal">Informações legais</string>
     <string name="action_libras">Informações em LIBRAS</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-
-    <!-- TODO: Remove or change this placeholder text -->
 </resources>

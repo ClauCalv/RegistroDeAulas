@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="br.ufabc.gravador.views.activities.OpenVideoActivity">
+
+    <fragment
+        android:id="@+id/annotationsFragment"
+        android:name="br.ufabc.gravador.views.fragments.AnnotationsFragment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="24dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/video_surface" />
+
+    <TextureView
+        android:id="@+id/video_surface"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:keepScreenOn="true"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_default="percent"
+        app:layout_constraintHeight_percent="0.4"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_video_overlay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:constraint_referenced_ids="startStopPlaying,nextAnnotation,prevAnnotation,progressBar,timeStamp" />
+
+    <ImageButton
+        android:id="@+id/startStopPlaying"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:background="#55000000"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/video_surface"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toStartOf="@id/nextAnnotation"
+        app:layout_constraintStart_toEndOf="@id/prevAnnotation"
+        app:layout_constraintTop_toTopOf="@+id/video_surface"
+        app:srcCompat="@drawable/ic_media_play" />
+
+    <ImageButton
+        android:id="@+id/nextAnnotation"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="32dp"
+        android:background="#55000000"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/video_surface"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toEndOf="@id/video_surface"
+        app:layout_constraintStart_toEndOf="@id/startStopPlaying"
+        app:layout_constraintTop_toTopOf="@+id/video_surface"
+        app:srcCompat="@drawable/ic_media_next" />
+
+    <ImageButton
+        android:id="@+id/prevAnnotation"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="16dp"
+        android:background="#55000000"
+        android:scaleType="fitCenter"
+        app:layout_constraintBottom_toBottomOf="@+id/video_surface"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toStartOf="@id/startStopPlaying"
+        app:layout_constraintStart_toStartOf="@id/video_surface"
+        app:layout_constraintTop_toTopOf="@+id/video_surface"
+        app:srcCompat="@drawable/ic_media_previous" />
+
+    <br.ufabc.gravador.views.widgets.DottedSeekBar
+        android:id="@+id/progressBar"
+        android:layout_width="0dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginBottom="8dp"
+        android:background="#55000000"
+        app:layout_constraintBottom_toBottomOf="@+id/video_surface"
+        app:layout_constraintEnd_toEndOf="@+id/video_surface"
+        app:layout_constraintStart_toStartOf="@+id/video_surface"
+        custom:dots_drawable="@drawable/dot_marker" />
+
+    <TextView
+        android:id="@+id/timeStamp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:background="#55000000"
+        android:text="00:00"
+        android:textColor="#FFFFFF"
+        app:layout_constraintEnd_toEndOf="@id/video_surface"
+        app:layout_constraintTop_toTopOf="@id/video_surface" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

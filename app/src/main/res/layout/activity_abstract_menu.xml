@@ -92,4 +92,11 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/group_menu_itens"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="visible"
+        app:constraint_referenced_ids="top_toolbar,bottom_toolbar" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

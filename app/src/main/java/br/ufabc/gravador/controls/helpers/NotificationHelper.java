@@ -31,19 +31,25 @@ public class NotificationHelper {
         createNotificationChannel();
     }
 
-    public PendingIntent buildRecordPendingIntent () {
+    public PendingIntent buildRecordAudioPendingIntent() {
         Intent intent = new Intent(context, RecordAudioActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return PendingIntent.getActivity(context, RECORD_REQUEST_CODE, intent, NO_FLAG);
     }
 
-    public PendingIntent buildSavePendingIntent () {
+    public PendingIntent buildRecordVideoPendingIntent() {
         Intent intent = new Intent(context, RecordAudioActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        return PendingIntent.getActivity(context, SAVE_REQUEST_CODE, intent, NO_FLAG);
+        return PendingIntent.getActivity(context, RECORD_REQUEST_CODE, intent, NO_FLAG);
     }
 
     public PendingIntent buildPlayAudioPendingIntent () {
+        Intent intent = new Intent(context, OpenAudioActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        return PendingIntent.getActivity(context, PLAY_REQUEST_CODE, intent, NO_FLAG);
+    }
+
+    public PendingIntent buildPlayVideoPendingIntent() {
         Intent intent = new Intent(context, OpenAudioActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         return PendingIntent.getActivity(context, PLAY_REQUEST_CODE, intent, NO_FLAG);
@@ -76,7 +82,7 @@ public class NotificationHelper {
         return notification.build();
     }
 
-    public Notification newPlayAudioNotification ( PendingIntent pendingIntent, String name, boolean isPlaying ) {
+    public Notification newPlayNotification(PendingIntent pendingIntent, String name, boolean isPlaying) {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
                 .setSmallIcon(NOTIFICATION_ICON)//TODO
@@ -89,9 +95,7 @@ public class NotificationHelper {
                         "Marcação Anterior",
                         buildGravacaoServiceButtonPendingIntent(GravacaoService.ACTION_PREV))
                 .addAction(
-                        isPlaying
-                                ? android.R.drawable.ic_media_pause
-                                : android.R.drawable.ic_media_play,
+                        isPlaying ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play,
                         isPlaying ? "Pausar" : "Reproduzir",
                         buildGravacaoServiceButtonPendingIntent(GravacaoService.ACTION_PLAY_PAUSE))
                 .addAction(
@@ -102,7 +106,7 @@ public class NotificationHelper {
         return notification.build();
     }
 
-    public Notification newRecordAudioNotification ( PendingIntent pendingIntent ) {
+    public Notification newRecordNotification(PendingIntent pendingIntent) {
         NotificationCompat.Builder notification = new NotificationCompat.Builder(context,
                 CHANNEL_DEFAULT_IMPORTANCE)
                 .setSmallIcon(NOTIFICATION_ICON)//TODO

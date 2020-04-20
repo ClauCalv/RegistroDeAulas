@@ -13,7 +13,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
 import br.ufabc.gravador.R;
-import br.ufabc.gravador.controls.helpers.DirectoryHelper;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
 import br.ufabc.gravador.views.fragments.AnnotationsFragment;
@@ -21,14 +20,13 @@ import br.ufabc.gravador.views.fragments.AnnotationsFragment;
 public class RecordAudioActivity extends AbstractServiceActivity
         implements AnnotationsFragment.AnnotationFragmentListener {
 
-    public static int AUDIO_REQUEST = 1111, VIDEO_REQUEST = 2222; //    TODO video
+
 
     public final String start = "Iniciar Gravação", stop = "Terminar gravação", save = "Salvar Gravação"; //TODO hardcoded
     private Button startStop;
     private TextView finishedLabel, recordTimeText;
     private Gravacao gravacao = null;
     private AnnotationsFragment fragment = null;
-    private DirectoryHelper directoryHelper;
 
     @Override
     protected int getLayoutID() {
@@ -48,13 +46,10 @@ public class RecordAudioActivity extends AbstractServiceActivity
 
         recordTimeText = findViewById(R.id.recordTimeText);
         recordTimeText.setVisibility(View.INVISIBLE);
-
     }
 
     @Override
     protected void onServiceOnline () {
-        directoryHelper = new DirectoryHelper(this);
-
         if ( !gravacaoService.hasGravacao() ) {
             gravacao = gravacaoService.createNewGravacao();
         } else gravacao = gravacaoService.getGravacao();
@@ -126,10 +121,10 @@ public class RecordAudioActivity extends AbstractServiceActivity
     }
 
     public void onAnnotationSaved () {
-        Intent intent = new Intent(RecordAudioActivity.this,
+        Intent intent = new Intent(this,
                 NameToSaveActivity.class);
-        intent.putExtra("RequestCode", AUDIO_REQUEST);
-        startActivityForResult(intent, AUDIO_REQUEST);
+        intent.putExtra("RequestCode", NewRecordActivity.AUDIO_REQUEST);
+        startActivityForResult(intent, NewRecordActivity.AUDIO_REQUEST);
     }
 
     @Override
@@ -163,7 +158,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
     protected void onActivityResult ( int requestCode, int resultCode, @Nullable Intent data ) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if ( requestCode == AUDIO_REQUEST )
+        if (requestCode == NewRecordActivity.AUDIO_REQUEST)
             if ( resultCode == RESULT_OK ) {
                 setResult(RESULT_OK);
                 finish();

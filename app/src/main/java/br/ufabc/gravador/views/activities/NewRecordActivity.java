@@ -11,6 +11,8 @@ import br.ufabc.gravador.controls.helpers.PermissionHelper;
 
 public class NewRecordActivity extends AbstractMenuActivity {
 
+    public static int AUDIO_REQUEST = 1111, VIDEO_REQUEST = 2222;
+
     Button recordAudio, recordVideo;
 
     @Override
@@ -40,7 +42,7 @@ public class NewRecordActivity extends AbstractMenuActivity {
 
     void recordVideoOnClick ( View view ) {
         PermissionHelper ph = new PermissionHelper(this);
-        Intent intent = new Intent(this, VideoRecordActivity.class);
+        Intent intent = new Intent(this, RecordVideoActivity.class);
         ph.startIfPermitted(intent, PermissionHelper.REQUEST_CAMERA,
                 PermissionHelper.CAMERA_PERMISSIONS);
     }

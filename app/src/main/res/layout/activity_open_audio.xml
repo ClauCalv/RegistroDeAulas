@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="br.ufabc.gravador.views.activities.RecordAudioActivity">
+    tools:context="br.ufabc.gravador.views.activities.OpenAudioActivity">
 
     <fragment
         android:id="@+id/annotationsFragment"
@@ -35,19 +35,29 @@
 
     <ImageButton
         android:id="@+id/startStopPlaying"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:background="@android:drawable/btn_default"
+        android:scaleType="fitCenter"
+        android:tint="#FF000000"
         app:layout_constraintBottom_toTopOf="@+id/progressBar"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toStartOf="@id/nextAnnotation"
+        app:layout_constraintStart_toEndOf="@id/prevAnnotation"
         app:layout_constraintTop_toBottomOf="@+id/recordName"
         app:srcCompat="@drawable/ic_media_play" />
 
     <ImageButton
         android:id="@+id/nextAnnotation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:background="@android:drawable/btn_default"
+        android:scaleType="fitCenter"
+        android:tint="#FF000000"
         app:layout_constraintBottom_toBottomOf="@+id/startStopPlaying"
+        app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@+id/startStopPlaying"
         app:layout_constraintTop_toTopOf="@+id/startStopPlaying"
@@ -55,9 +65,15 @@
 
     <ImageButton
         android:id="@+id/prevAnnotation"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:background="@android:drawable/btn_default"
+        android:scaleType="fitCenter"
+        android:tint="#FF000000"
         app:layout_constraintBottom_toBottomOf="@+id/startStopPlaying"
+        app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toStartOf="@+id/startStopPlaying"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/startStopPlaying"

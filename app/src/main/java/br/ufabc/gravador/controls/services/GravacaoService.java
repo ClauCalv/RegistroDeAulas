@@ -1,10 +1,13 @@
 package br.ufabc.gravador.controls.services;
 
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.hardware.Camera;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
 import android.media.AudioManager;
+import android.media.CamcorderProfile;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Binder;
@@ -14,6 +17,7 @@ import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemClock;
 import android.util.Log;
+import android.view.Surface;
 import android.widget.Toast;
 
 import java.io.File;
@@ -33,7 +37,7 @@ public class GravacaoService extends Service {
     public static final String SERVICE_ACTION = "SERVICE_ACTION";
     public static final String ACTION_PLAY_PAUSE = "ACTION_PLAY_PAUSE", ACTION_NEXT = "ACTION_NEXT", ACTION_PREV = "ACTION_PREV";
     public static final int MEDIATYPE_AUDIO = 1, MEDIATYPE_VIDEO = 2, MEDIATYPE_NULL = 0;
-    public static final String AUDIO_EXTENSION = ".3gp", VIDEO_EXTENSION = "??";//TODO video
+    public static final String AUDIO_EXTENSION = ".3gp", VIDEO_EXTENSION = ".mp4";
     public static final int STATUS_IDLE = -1, STATUS_RECORD_PREPARED = 0, STATUS_RECORDING = 1,
             STATUS_WAITING_SAVE = 2, STATUS_LOADING_SAVING = 3, STATUS_PLAYING = 4,
             STATUS_PAUSED = 5, STATUS_RECEIVING_TRANSMISSION = 6, STATUS_TRANSMITTING = 7;
@@ -42,6 +46,7 @@ public class GravacaoService extends Service {
 
     private int currMediaType = MEDIATYPE_NULL;
     private int serviceStatus = STATUS_IDLE;
+    private Camera camera;
 
     private NotificationHelper notificationHelper;
     private ConnectionHelper connectionHelper;
@@ -53,6 +58,9 @@ public class GravacaoService extends Service {
     private AudioManager audioManager;
     private AudioAttributes audioAttributes;
     private AudioFocusRequest focusRequest;
+    private boolean shouldCameraRelease = false;
+    private boolean useAudio = true;
+    private Surface surface;
 
     public interface TimeUpdateListener {
         void onTimeUpdate ( long time );
@@ -160,8 +168,22 @@ public class GravacaoService extends Service {
         return gravacao;
     }
 
+    public void setVideoParameters(Camera camera, boolean audio) {
+        this.camera = camera;
+        this.useAudio = audio;
+    }
+
+    public void scheduleCameraRelease() {
+        if (camera == null) return;
+        if (serviceStatus == STATUS_RECORDING) {
+            camera.release();
+            camera = null;
+        } else shouldCameraRelease = true;
+    }
+
     public void prepareForRecord ( int mediaType ) {
         if ( gravacao == null ) return;
+
         String location = null, extension = null;
         switch ( currMediaType = mediaType ) {
             case MEDIATYPE_AUDIO:
@@ -169,10 +191,11 @@ public class GravacaoService extends Service {
                 extension = AUDIO_EXTENSION;
                 break;
             case MEDIATYPE_VIDEO:
-                //TODO;
+                location = dh.getDirectory(DirectoryHelper.VIDEO_DIR).getPath();
+                extension = VIDEO_EXTENSION;
                 break;
             case MEDIATYPE_NULL:
-                break;
+                return;
             default:
                 throw new IllegalArgumentException("Unexpected mediatype: " + mediaType);
         }
@@ -185,25 +208,50 @@ public class GravacaoService extends Service {
     }
 
     public boolean startRecording () {
-        if ( getServiceStatus() != STATUS_RECORD_PREPARED )
-            throw new IllegalStateException("recorder not prepared");
-        if ( gravacao == null )
-            return false;
+        if (
+                getServiceStatus() != STATUS_RECORD_PREPARED ||
+                        gravacao == null
+        ) return false;
 
         try {
-
-            ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
             recorder = new MediaRecorder();
-            recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-            recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+            switch (currMediaType) {
+                case MEDIATYPE_AUDIO:
+                    recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+                    recorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+                    recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+                    break;
+                case MEDIATYPE_VIDEO:
+                    CamcorderProfile profile = CamcorderProfile.get(CamcorderProfile.QUALITY_HIGH);
+                    if (camera == null) throw new IllegalStateException("Camera not set");
+                    recorder.setCamera(camera);
+                    if (useAudio)
+                        recorder.setAudioSource(MediaRecorder.AudioSource.CAMCORDER);
+                    recorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+                    recorder.setOutputFormat(profile.fileFormat);
+                    recorder.setVideoEncoder(profile.videoCodec);
+                    recorder.setVideoEncodingBitRate(profile.videoBitRate);
+                    recorder.setVideoFrameRate(profile.videoFrameRate);
+                    recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
+                    if (useAudio) {
+                        recorder.setAudioEncoder(profile.audioCodec);
+                        recorder.setAudioChannels(profile.audioChannels);
+                        recorder.setAudioEncodingBitRate(profile.audioBitRate);
+                        recorder.setAudioSamplingRate(profile.audioSampleRate);
+                    }
+                    break;
+                case MEDIATYPE_NULL:
+                default:
+                    return false;
+            }
+            ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
             recorder.setOutputFile(fd.getFileDescriptor());
-            recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-            recorder.setOnErrorListener(( MediaRecorder mr, int what, int extra ) ->
-                Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra));
+            recorder.setOnErrorListener((MediaRecorder mr, int what, int extra) ->
+                    Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra));
             recorder.prepare();
-        } catch ( IOException e ) {
-            Log.e("AudioRecord", "prepare() failed", e);
-            Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG).show();
+        } catch (IllegalStateException | IOException e) {
+            Log.e("startRecord", "prepare() failed", e);
+            Toast.makeText(this, "Falha em iniciar gravação", Toast.LENGTH_LONG).show();
             prepareForRecord(MEDIATYPE_NULL);
             return false;
         }
@@ -221,11 +269,17 @@ public class GravacaoService extends Service {
     }
 
     public void stopRecording () {
-        if ( recorder != null ) {
-            recorder.stop();
-            recorder.release();
-            recorder = null;
-            onRecordStopped();
+        if (recorder == null) return;
+
+        recorder.stop();
+        recorder.release();
+        recorder = null;
+
+        onRecordStopped();
+
+        if (shouldCameraRelease) {
+            shouldCameraRelease = false;
+            scheduleCameraRelease();
         }
     }
 
@@ -266,7 +320,11 @@ public class GravacaoService extends Service {
 
     private boolean isPlayerPrepared = false;
 
-    public boolean prepareForPlaying () {
+    public void setVideoSurface(Surface surface) {
+        this.surface = surface;
+    }
+
+    public boolean prepareForPlaying(int mediaType) {
         if ( player == null )
             player = new MediaPlayer();
         else
@@ -280,19 +338,24 @@ public class GravacaoService extends Service {
                     .build();
 
             player.setAudioAttributes(audioAttributes);
-
             player.setOnErrorListener(( MediaPlayer mp, int what, int extra ) -> {
                 Log.e("MediaRecorder ERROR", "what = " + what + ", extra = " + extra);
                 return false;
             });
-            Log.wtf("recordURI", gravacao.getRecordURI());
-            Log.wtf("annotationsURI", gravacao.getAnnotationURI());
             ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
             player.setDataSource(fd.getFileDescriptor());
+            if ((currMediaType = mediaType) == MEDIATYPE_VIDEO)
+                player.setSurface(surface);
             player.setLooping(false);
             player.prepare();
             isPlayerPrepared = true;
             currentTime = 0;
+            player.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    startPausePlaying(false);
+                }
+            });
         } catch ( IllegalArgumentException | IOException e ) {
             e.printStackTrace();
             Toast.makeText(null, "Falha em iniciar gravação", Toast.LENGTH_LONG).show();
@@ -341,7 +404,7 @@ public class GravacaoService extends Service {
                     throw new IllegalStateException("Failed silently");
 
         } catch ( IllegalStateException e ) {
-            Log.e("AudioPlayer", "bad state", e);
+            Log.e("MediaPlayer", "bad state", e);
             stopPlaying();
             return false;
         }
@@ -420,104 +483,60 @@ public class GravacaoService extends Service {
     //        return true;
     //     }
 
-    /**
-     public boolean startPausePlaying ( boolean playPause ) {
-     if ( player == null || !isPlayerPrepared )
-     throw new IllegalStateException("player not prepared");
-
-     try {
-     if ( playPause ) {
-     long time = currentTime;
-     player.start();
-     startTimer(time);
-     goForeground();
-     } else {
-     player.pause();
-     stopTimer();
-     }
-
-     buildPlayPauseNotification(playPause);
-     serviceStatus = playPause ? STATUS_PLAYING : STATUS_PAUSED;
-
-     } catch ( IllegalStateException e ) {
-     Log.e("AudioPlayer", "bad state", e);
-     stopPlaying();
-     return false;
-     }
-     return true;
-     }
-
-     public int jumpTo ( int time ) {
-     if ( player == null || !isPlayerPrepared )
-     throw new IllegalStateException("player not prepared");
-
-     stopTimer();
-     player.seekTo(time);
-     startTimer(time);
-     return time;
-     }
-
-     public int nextPrev ( boolean isNext ) {
-     if ( player == null || !isPlayerPrepared )
-     throw new IllegalStateException("player not prepared");
-
-     int time;
-     long currTime = currentTime;
-     int[] times = gravacao.getAnnotationTimes();
-
-     List<Integer> lTimes = Arrays.stream(times)
-     .filter(x -> isNext ?
-     x > currTime :
-     x < currTime)
-     .sorted()
-     .boxed()
-     .collect(Collectors.toList());
-
-     time = lTimes.isEmpty() ?
-     isNext ? player.getDuration() : 0 :
-     isNext ? lTimes.get(0) : lTimes.get(lTimes.size() - 1);
-
-     return jumpTo(time);
-     }
-
-     private void stopPlaying () {
-     if ( player != null ) {
-     player.stop();
-     player.release();
-     player = null;
-     isPlayerPrepared = false;
-     }
-     goBackground();
-     serviceStatus = STATUS_IDLE;
-     }
-     */
 
     private void buildPlayPauseNotification ( boolean isPlaying ) {
+        PendingIntent intent = null;
+        switch (currMediaType) {
+            case MEDIATYPE_AUDIO:
+                intent = notificationHelper.buildPlayAudioPendingIntent();
+            case MEDIATYPE_VIDEO:
+                intent = notificationHelper.buildPlayVideoPendingIntent();
+                break;
+            case MEDIATYPE_NULL:
+            default:
+        }
         notificationHelper.pushNotification(
                 NOTIFICATION_ID,
-                notificationHelper.newPlayAudioNotification(
-                        notificationHelper.buildPlayAudioPendingIntent(),
+                notificationHelper.newPlayNotification(
+                        intent,
                         gravacao.getName(),
                         isPlaying
                 )
         );
     }
 
-    private void buildRecordNotification () {
+    private void buildRecordNotification() {
+        PendingIntent intent = null;
+        switch (currMediaType) {
+            case MEDIATYPE_AUDIO:
+                intent = notificationHelper.buildRecordAudioPendingIntent();
+            case MEDIATYPE_VIDEO:
+                intent = notificationHelper.buildRecordVideoPendingIntent();
+                break;
+            case MEDIATYPE_NULL:
+            default:
+        }
         notificationHelper.pushNotification(
                 NOTIFICATION_ID,
-                notificationHelper.newRecordAudioNotification(
-                        notificationHelper.buildRecordPendingIntent()
-                )
+                notificationHelper.newRecordNotification(intent)
         );
     }
 
     private void buildSaveNotification () {
+        PendingIntent intent = null;
+        switch (currMediaType) {
+            case MEDIATYPE_AUDIO:
+                intent = notificationHelper.buildRecordAudioPendingIntent();
+            case MEDIATYPE_VIDEO:
+                intent = notificationHelper.buildRecordVideoPendingIntent();
+                break;
+            case MEDIATYPE_NULL:
+            default:
+        }
         notificationHelper.pushNotification(
                 NOTIFICATION_ID,
-                notificationHelper.newSaveNotification(
-                        notificationHelper.buildSavePendingIntent()
-                ));
+                notificationHelper.newSaveNotification(intent)
+        );
     }
 
     private void goBackground () {
