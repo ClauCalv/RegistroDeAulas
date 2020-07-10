@@ -11,14 +11,14 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
+import java.util.Arrays;
+
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.views.fragments.AnnotationsFragment;
 import br.ufabc.gravador.views.widgets.DottedSeekBar;
 
-public class OpenAudioActivity extends AbstractServiceActivity
-        implements AnnotationsFragment.AnnotationFragmentListener {
+public class OpenAudioActivity extends AbstractAnnotationsActivity {
 
     public final int play = R.drawable.ic_media_play, pause = R.drawable.ic_media_pause;
     private int recordDuration, playTime;
@@ -28,7 +28,6 @@ public class OpenAudioActivity extends AbstractServiceActivity
     private DottedSeekBar progressBar;
 
     private Gravacao gravacao = null;
-    private AnnotationsFragment fragment = null;
 
     @Override
     protected int getLayoutID() {
@@ -84,14 +83,12 @@ public class OpenAudioActivity extends AbstractServiceActivity
             return;
         } else gravacao = gravacaoService.getGravacao();
 
-        fragment.updateGravacao();
-
         int serviceStatus = gravacaoService.getServiceStatus();
 
         startStop.setImageResource(serviceStatus == GravacaoService.STATUS_PLAYING ? pause : play);
         recordName.setText(gravacao.getName());
         timeStamp.setText(Gravacao.formatTime(0));
-        progressBar.setDots(gravacao.getAnnotationTimes());
+        progressBar.setDots(Arrays.stream(gravacao.getAnnotationTimes()).mapToInt(i -> i.time).toArray());
         progressBar.setMax(recordDuration = (int) gravacaoService.getTimeTotal());
         progressBar.invalidate();
 
@@ -104,23 +101,15 @@ public class OpenAudioActivity extends AbstractServiceActivity
                     progressBar.setProgress((int) time);
             }
         });
+
+        super.onServiceOnline();
     }
-
-    @Override
-    public void receiveFragment ( AnnotationsFragment f ) {
-        fragment = f;
-    }
-
-    public int getGravacaoTime () { return !isBound ? 0 : (int) gravacaoService.getTime(); }
-
-    @Override
-    public Gravacao getGravacao () { return gravacao; }
 
     void nextPrevOnClick ( View view, boolean isNext ) {
         if ( !isBound ) return;
-        playTime = gravacaoService.nextPrev(isNext);
-        timeUpdate(playTime);
-        fragment.jumpToTime(playTime);
+        Gravacao.AnnotationTime playTime = gravacaoService.nextPrev(isNext);
+        timeUpdate(playTime.time);
+        annotationsFragment.jumpToTime(playTime.id);
     }
 
     void startStopOnClick ( View view ) {
@@ -150,7 +139,7 @@ public class OpenAudioActivity extends AbstractServiceActivity
     public void timeUpdate ( int time ) {
         playTime = time;
         progressBar.setProgress(playTime);
-        progressBar.setDots(gravacao.getAnnotationTimes());
+        progressBar.setDots(Arrays.stream(gravacao.getAnnotationTimes()).mapToInt(i -> i.time).toArray());
         timeStamp.setText(Gravacao.formatTime(playTime));
     }
 
@@ -185,14 +174,6 @@ public class OpenAudioActivity extends AbstractServiceActivity
         }
     }
 
-    @Override
-    protected void onPause () {
-        super.onPause();
-        fragment.alertSave(() -> {
-            gravacaoService.saveGravacao(null);
-        });
-        //TODO SALVAR MESMO??????
-    }
 
     @Override
     public void onAnnotationChanged ( int ID, boolean firsttime ) {

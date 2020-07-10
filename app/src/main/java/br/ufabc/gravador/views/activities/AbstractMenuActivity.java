@@ -1,6 +1,8 @@
 package br.ufabc.gravador.views.activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -8,15 +10,20 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 
 import androidx.annotation.LayoutRes;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.constraintlayout.widget.Group;
 
+import java.util.List;
+
 import br.ufabc.gravador.R;
 
 public abstract class AbstractMenuActivity extends AppCompatActivity {
+
+    private static final String moduloConfigurador = "ufabc.projeto.moduloconfigurador";
 
     protected Toolbar myToolbar;
     protected ActionBar myActionBar;
@@ -70,11 +77,27 @@ public abstract class AbstractMenuActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
-    void menuConfigOnClick(View view) {
-        //TODO
+    public static boolean isPackageInstalled(@NonNull final Context context, @NonNull final String targetPackage) {
+        List<ApplicationInfo> packages = context.getPackageManager().getInstalledApplications(0);
+        for (ApplicationInfo packageInfo : packages) {
+            if (targetPackage.equals(packageInfo.packageName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     void menuLibrasOnClick(View view) {
         //TODO
+    }
+
+    void menuConfigOnClick(View view) {
+        Intent intent;
+        if (isPackageInstalled(this, moduloConfigurador)) {
+            intent = getPackageManager().getLaunchIntentForPackage(moduloConfigurador);
+        } else {
+            intent = new Intent(this, BasicConfigActivity.class);
+        }
+        startActivity(intent);
     }
 }

@@ -5,6 +5,8 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.util.Xml;
 
+import androidx.annotation.Nullable;
+
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlSerializer;
@@ -184,10 +186,10 @@ public class Gravacao {
         return -1;
     }
 
-    public int[] getAnnotationTimes () {
-        int[] times = new int[annotations.size()];
+    public AnnotationTime[] getAnnotationTimes() {
+        AnnotationTime[] times = new AnnotationTime[annotations.size()];
         for ( int i = 0; i < annotations.size(); i++ )
-            times[i] = annotations.valueAt(i).getTime();
+            times[i] = new AnnotationTime(annotations.valueAt(i).id, annotations.valueAt(i).getTime());
         return times;
     }
 
@@ -212,13 +214,13 @@ public class Gravacao {
         lastSaved = false;
     }
 
-    //    public void setAnnotationImage ( int id, String uri ) {
-    //        Annotations a = annotations.get(id);
-    //        if ( a == null ) return;
-    //
-    //        a.addImage(uri);
-    //        lastSaved = false;
-    //    }
+    public void setAnnotationImage(int id, String uri) {
+        Annotations a = annotations.get(id);
+        if (a == null) return;
+
+        a.addImage(uri);
+        lastSaved = false;
+    }
 
     public class Annotations implements Serializable {
 
@@ -272,33 +274,6 @@ public class Gravacao {
             return imageUri != null;
         }
 
-        //        public Bitmap getIcon ( int targetW, int targetH ) {
-        //            if ( imagePath == null ) return null;
-        //
-        //            if ( targetW <= 0 || targetH <= 0 ) return null;
-        //
-        //            if ( icon != null && targetW == iconW && targetH == iconH ) return icon;
-        //
-        //            // Get the dimensions of the bitmap
-        //            BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        //            bmOptions.inJustDecodeBounds = true;
-        //            BitmapFactory.decodeFile(imagePath, bmOptions);
-        //
-        //            int photoW = bmOptions.outWidth;
-        //            int photoH = bmOptions.outHeight;
-        //
-        //            // Determine how much to scale down the image
-        //            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-        //
-        //            // Decode the image file into a Bitmap sized to fill the View
-        //            bmOptions.inJustDecodeBounds = false;
-        //            bmOptions.inSampleSize = scaleFactor;
-        //            bmOptions.inPurgeable = true;
-        //
-        //            icon = BitmapFactory.decodeFile(imagePath, bmOptions);
-        //            return icon;
-        //        }
-
         protected void saveAnnotation ( XmlSerializer xml ) throws IOException {
             xml.startTag(null, "Annotation");
             xml.attribute(null, "ID", String.valueOf(id));
@@ -321,6 +296,31 @@ public class Gravacao {
             }
 
             xml.endTag(null, "Annotation");
+        }
+    }
+
+    public static class AnnotationTime implements Comparable<AnnotationTime> {
+        /**
+         * struct for quick annotation access
+         **/
+        public final int id;
+        public final int time;
+
+        public AnnotationTime(int id, int time) {
+            this.id = id;
+            this.time = time;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object obj) {
+            if (obj instanceof AnnotationTime)
+                return id == ((AnnotationTime) obj).id;
+            return super.equals(obj);
+        }
+
+        @Override
+        public int compareTo(AnnotationTime o) {
+            return Integer.valueOf(this.time).compareTo(o.time);
         }
     }
 }

@@ -27,6 +27,12 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:ignore="GoogleAppIndexingWarning">
+        <activity android:name=".views.activities.ConfigContrastActivity"></activity>
+        <activity android:name=".views.activities.ConfigBoldfontActivity" />
+        <activity android:name=".views.activities.ConfigFontsizeActivity" />
+        <activity android:name=".views.activities.ConfigCoresActivity" />
+        <activity android:name=".views.activities.BasicConfigActivity" />
+
         <service
             android:name=".controls.services.GravacaoService"
             android:enabled="true"

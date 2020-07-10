@@ -8,11 +8,12 @@
     tools:context=".views.fragments.AnnotationsFragment">
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout1"
+        android:id="@+id/selection_pane"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        app:layout_constraintBottom_toTopOf="@+id/constraintLayout2"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_height="wrap_content"
+        app:layout_constraintBottom_toTopOf="@+id/content_pane"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0">
 
         <Spinner
             android:id="@+id/annotationsSelector"
@@ -20,10 +21,31 @@
             android:layout_height="40dp"
             android:entries="@array/gravacoes"
             android:spinnerMode="dropdown"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toStartOf="@+id/annotationNewButton"
-            app:layout_constraintHorizontal_bias="0.0"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
+
+        <ImageButton
+            android:id="@+id/annotationNewButton"
+            style="@android:style/Widget.Material.Light.ImageButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@android:drawable/btn_default"
+            android:contentDescription="Criar Anotação"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@android:drawable/ic_input_add" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:id="@+id/content_pane"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toTopOf="@+id/image_pane"
+        app:layout_constraintTop_toBottomOf="@id/selection_pane">
 
         <EditText
             android:id="@+id/annotationContent"
@@ -37,7 +59,7 @@
             app:layout_constraintBottom_toTopOf="@+id/annotationSave"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintStart_toStartOf="@+id/annotationsSelector"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/annotationName" />
 
         <EditText
@@ -50,20 +72,8 @@
             android:text="Anotação 1"
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintEnd_toStartOf="@+id/annotationTime"
-            app:layout_constraintStart_toStartOf="@+id/annotationsSelector"
-            app:layout_constraintTop_toBottomOf="@+id/annotationsSelector" />
-
-        <ImageButton
-            android:id="@+id/annotationNewButton"
-            style="@android:style/Widget.Material.Light.ImageButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@android:drawable/btn_default"
-            android:contentDescription="Criar Anotação"
-            app:layout_constraintBottom_toTopOf="@+id/annotationName"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@android:drawable/ic_input_add" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
 
         <TextView
             android:id="@+id/annotationTime"
@@ -73,7 +83,7 @@
             android:textAppearance="@style/TextAppearance.AppCompat.Medium"
             app:layout_constraintBottom_toTopOf="@+id/annotationContent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/annotationNewButton" />
+            app:layout_constraintTop_toTopOf="parent" />
 
         <ImageButton
             android:id="@+id/annotationTakePicture"
@@ -111,11 +121,11 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <androidx.constraintlayout.widget.ConstraintLayout
-        android:id="@+id/constraintLayout2"
+        android:id="@+id/image_pane"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/constraintLayout1">
+        app:layout_constraintTop_toBottomOf="@id/content_pane">
 
         <ImageView
             android:id="@+id/annotationImage"

@@ -25,9 +25,9 @@ public class DirectoryHelper {
     private static final String MY_PROVIDER = "br.ufabc.gravador.fileprovider";
     private Context context;
 
-    public static final int GRAVACAO_DIR = 1, AUDIO_DIR = 2, VIDEO_DIR = 3;
-    private static final String GRAVACAO_PATH = "Gravacao", AUDIO_PATH = "Audio", VIDEO_PATH = "Video";
-    private File gravacaoDir, audioDir, videoDir;
+    public static final int GRAVACAO_DIR = 1, AUDIO_DIR = 2, VIDEO_DIR = 3, PICTURE_DIR = 4;
+    private static final String GRAVACAO_PATH = "Gravacao", AUDIO_PATH = "Audio", VIDEO_PATH = "Video", PICTURE_PATH = "Picture";
+    private File gravacaoDir, audioDir, videoDir, pictureDir;
 
     public DirectoryHelper ( Context context ) {
         this.context = context;
@@ -62,6 +62,10 @@ public class DirectoryHelper {
         videoDir = new File(ext, VIDEO_PATH);
         if ( !videoDir.exists() )
             videoDir.mkdirs();
+
+        pictureDir = new File(ext, PICTURE_PATH);
+        if (!pictureDir.exists())
+            pictureDir.mkdirs();
     }
 
     public File getDirectory ( int dir ) {
@@ -72,6 +76,8 @@ public class DirectoryHelper {
                 return audioDir;
             case VIDEO_DIR:
                 return videoDir;
+            case PICTURE_DIR:
+                return pictureDir;
             default:
                 return null;
         }
@@ -89,6 +95,8 @@ public class DirectoryHelper {
             case VIDEO_DIR:
                 subdir = VIDEO_PATH;
                 break;
+            case PICTURE_DIR:
+                subdir = PICTURE_PATH;
         }
         List<File> allFiles = new ArrayList<File>();
 
@@ -105,24 +113,12 @@ public class DirectoryHelper {
 
     public File createFile ( int dir, String name ) {
         File f = new File(getDirectory(dir), name);
-        try {
-            f.createNewFile();
-        } catch ( IOException e ) {
-            return null;
-        }
         return f;
     }
 
     public Uri createURIFromString ( String location ) {
-        Uri uri;
-        try {
-            File f = new File(location);
-            f.createNewFile();
-            uri = FileProvider.getUriForFile(context, MY_PROVIDER, f);
-        } catch ( IOException e ) {
-            Log.e("RegistroDeAulas", "Could not open file", e);
-            return null;
-        }
+        File f = new File(location);
+        Uri uri = FileProvider.getUriForFile(context, MY_PROVIDER, f);
         return uri;
     }
 

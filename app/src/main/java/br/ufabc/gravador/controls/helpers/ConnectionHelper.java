@@ -39,7 +39,7 @@ public class ConnectionHelper {
     private ConnectionsClient mConnectionsClient;
     private static final Strategy strategy = Strategy.P2P_STAR;
     private final String endpointID;
-    private ConnectionListener listener = new EmptyConnectionListener();
+    private ConnectionCallback listener = new EmptyConnectionListener();
 
     private final Map<String, Endpoint> mDiscoveredEndpoints = new HashMap<>();
     private final Map<String, Endpoint> mPendingConnections = new HashMap<>();
@@ -273,7 +273,7 @@ public class ConnectionHelper {
                 });
     }
 
-    public void setConnectionListener ( ConnectionListener listener ) {
+    public void setConnectionListener(ConnectionCallback listener) {
         this.listener = listener;
     }
 
@@ -321,7 +321,7 @@ public class ConnectionHelper {
 
     }
 
-    public interface ConnectionListener {
+    public interface ConnectionCallback {
         void onAdvertisingStarted ();
 
         void onAdvertisingFailed ();
@@ -341,7 +341,7 @@ public class ConnectionHelper {
         void onEndpointDisconnected ( Endpoint endpoint );
     }
 
-    public static class EmptyConnectionListener implements ConnectionListener {
+    public static class EmptyConnectionListener implements ConnectionCallback {
         public void onAdvertisingStarted () {}
 
         public void onAdvertisingFailed () {}
