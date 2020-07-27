@@ -38,9 +38,9 @@ public class MediaHelper {
                 recorder.setVideoSource(MediaRecorder.VideoSource.SURFACE);
                 recorder.setAudioSource(MediaRecorder.AudioSource.MIC);
                 recorder.setOutputFormat(MediaRecorder.OutputFormat.MPEG_4);
-                recorder.setVideoEncodingBitRate(1000000);
+                recorder.setVideoEncodingBitRate(1024 * 1024);
                 recorder.setVideoFrameRate(30);
-                recorder.setVideoSize(dims.w, dims.h);
+                recorder.setVideoSize(dims.vd.getWidth(), dims.vd.getHeight());
                 recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
                 recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
                 recorder.setOrientationHint(dims.d);
@@ -84,6 +84,9 @@ public class MediaHelper {
 
     public boolean prepareForPlaying(boolean isVideo, FileDescriptor fd) {
         try {
+            if (player == null) player = new MediaPlayer();
+            else player.reset();
+
             audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
             audioAttributes = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -115,7 +118,7 @@ public class MediaHelper {
     }
 
     public int startPlaying() {
-        if (!isMediaRecorderPrepared) throw new IllegalStateException("recorder not prepared");
+        if (!isMediaPlayerPrepared) throw new IllegalStateException("player not prepared");
         try {
             if (Build.VERSION.SDK_INT >= 26) {
                 focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
@@ -178,4 +181,22 @@ public class MediaHelper {
         if (player == null) return false;
         return player.isPlaying();
     }
+
+    public void setMicMuted(boolean state) {
+        AudioManager myAudioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+
+        // get the working mode and keep it
+        int workingAudioMode = myAudioManager.getMode();
+
+        myAudioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+
+        // change mic state only if needed
+        if (myAudioManager.isMicrophoneMute() != state) {
+            myAudioManager.setMicrophoneMute(state);
+        }
+
+        // set back the original working mode
+        myAudioManager.setMode(workingAudioMode);
+    }
+
 }

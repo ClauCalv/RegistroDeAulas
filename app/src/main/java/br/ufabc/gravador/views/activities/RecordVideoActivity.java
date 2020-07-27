@@ -19,9 +19,8 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 
-import java.io.IOException;
-
 import br.ufabc.gravador.R;
+import br.ufabc.gravador.controls.helpers.Camera2Helper;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
 
@@ -82,30 +81,21 @@ public class RecordVideoActivity extends AbstractServiceActivity {
         } else gravacao = gravacaoService.getGravacao();
 //        fragment.updateGravacao();
 
-        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
-            @Override
-            public void onTimeUpdate(long time) {
-                if (videoTime != null)
-                    videoTime.setText(Gravacao.formatTime(time));
-            }
+        gravacaoService.setTimeUpdateListener(time -> {
+            if (videoTime != null)
+                videoTime.setText(Gravacao.formatTime(time));
         });
 
         if (videoSurface.isAvailable()) {
-            mImageWriter = ImageWriter.newInstance(new Surface(videoSurface.getSurfaceTexture()), 2);
-            gravacaoService.setPreviewWriter(mImageWriter);
+            startPreview();
         }
         videoSurface.setSurfaceTextureListener(new TextureView.SurfaceTextureListener() {
             public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
-                mImageWriter = ImageWriter.newInstance(new Surface(surface), 2);
-                gravacaoService.setPreviewWriter(mImageWriter);
+                startPreview();
             }
 
             public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
-                gravacaoService.abortPreviewWriter(mImageWriter);
-                if (mImageWriter != null) {
-                    mImageWriter.close();
-                    mImageWriter = null;
-                }
+                stopPreview();
                 return true;
             }
 
@@ -137,18 +127,34 @@ public class RecordVideoActivity extends AbstractServiceActivity {
                 serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
                         serviceStatus == GravacaoService.STATUS_RECORDING ? false : true);
 
-        muteVideo.setEnabled(
-                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
-                        serviceStatus == GravacaoService.STATUS_RECORDING ? false : true);
+        muteVideo.setImageResource(gravacaoService.isAudioOn() ? R.drawable.ic_volume_off : R.drawable.ic_volume_on);
+
+//        muteVideo.setEnabled(
+//                serviceStatus == GravacaoService.STATUS_WAITING_SAVE ||
+//                        serviceStatus == GravacaoService.STATUS_RECORDING ? false : true);
 
 
+    }
+
+    private void startPreview() {
+        gravacaoService.setupCamera(facingFront, false, new Camera2Helper.CameraReadyCallback() {
+            @Override
+            public void onCameraReady() {
+                gravacaoService.registerPreviewSurface(new Surface(videoSurface.getSurfaceTexture()));
+                gravacaoService.startPreviewing();
+            }
+        });
+    }
+
+    private void stopPreview() {
+        gravacaoService.stopPreviewing();
     }
 
     private void recordVideoOnClick(View view) {
         if (!isBound) return;
 
         if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE)
-            gravacaoService.prepareForRecord(GravacaoService.MEDIATYPE_VIDEO, facingFront);
+            gravacaoService.prepareGravacaoForRecord(GravacaoService.MEDIATYPE_VIDEO);
         switch (gravacaoService.getServiceStatus()) {
             case GravacaoService.STATUS_RECORD_PREPARED:
                 if (!gravacaoService.startRecording()) {
@@ -156,9 +162,11 @@ public class RecordVideoActivity extends AbstractServiceActivity {
                             Toast.LENGTH_LONG).show(); //TODO hardcoded
                     gravacaoService.goIdle();
                 }
+                updateState();
                 break;
             case GravacaoService.STATUS_RECORDING:
                 gravacaoService.stopRecording();
+                updateState();
                 break;
             case GravacaoService.STATUS_WAITING_SAVE:
                 saveAnnotation();
@@ -173,23 +181,15 @@ public class RecordVideoActivity extends AbstractServiceActivity {
 
     private void flipCameraOnClick(View view) {
         facingFront = !facingFront;
-        try {
-            SurfaceTexture surface = videoSurface.getSurfaceTexture();
-            releaseCamera();
-            camera = findCamera();
-            fixRotation();
-            camera.setPreviewTexture(surface);
-            camera.startPreview();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        stopPreview();
+        startPreview();
     }
 
     private void muteVideoOnClick(View view) {
         if (gravacaoService != null) return;
 
-        useAudio = gravacaoService.invertMicrophoneMute();
-        muteVideo.setImageResource(useAudio ? R.drawable.ic_volume_on : R.drawable.ic_volume_off);
+        useAudio = gravacaoService.toggleAudioOnOff();
+        muteVideo.setImageResource(gravacaoService.isAudioOn() ? R.drawable.ic_volume_off : R.drawable.ic_volume_on);
     }
 
     public void saveAnnotation() {

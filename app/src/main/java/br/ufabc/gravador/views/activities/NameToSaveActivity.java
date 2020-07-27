@@ -39,7 +39,7 @@ public class NameToSaveActivity extends AbstractServiceActivity {
     protected void onServiceOnline () {
         if ( !gravacaoService.hasGravacao() ) {
             finish();
-            Toast.makeText(null, "Falha ao abrir gravação", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Falha ao abrir gravação", Toast.LENGTH_LONG).show();
             return;
         } else gravacao = gravacaoService.getGravacao();
 

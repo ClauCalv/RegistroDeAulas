@@ -92,14 +92,11 @@ public class OpenAudioActivity extends AbstractAnnotationsActivity {
         progressBar.setMax(recordDuration = (int) gravacaoService.getTimeTotal());
         progressBar.invalidate();
 
-        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
-            @Override
-            public void onTimeUpdate(long time) {
-                if (timeStamp != null)
-                    timeStamp.setText(Gravacao.formatTime(time));
-                if (progressBar != null)
-                    progressBar.setProgress((int) time);
-            }
+        gravacaoService.setTimeUpdateListener(time -> {
+            if (timeStamp != null)
+                timeStamp.setText(Gravacao.formatTime(time));
+            if (progressBar != null)
+                progressBar.setProgress((int) time);
         });
 
         super.onServiceOnline();
@@ -109,16 +106,20 @@ public class OpenAudioActivity extends AbstractAnnotationsActivity {
         if ( !isBound ) return;
         Gravacao.AnnotationTime playTime = gravacaoService.nextPrev(isNext);
         timeUpdate(playTime.time);
-        annotationsFragment.jumpToTime(playTime.id);
+        annotationsFragment.openAnnotation(playTime.id);
     }
 
     void startStopOnClick ( View view ) {
         if ( !isBound ) return;
-        if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
+        if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE) {
             gravacaoService.prepareForPlaying(GravacaoService.MEDIATYPE_AUDIO);
+            gravacaoService.setupPlayer(null, null);
+        }
+
         switch ( gravacaoService.getServiceStatus() ) {
             case GravacaoService.STATUS_PAUSED:
-                if ( gravacaoService.startPausePlaying(true) ) {
+                gravacaoService.startPausePlaying(true);
+                if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_PLAYING) {
                     startStop.setImageResource(pause);
                 } else {
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)
@@ -126,7 +127,8 @@ public class OpenAudioActivity extends AbstractAnnotationsActivity {
                 }
                 break;
             case GravacaoService.STATUS_PLAYING:
-                if ( gravacaoService.startPausePlaying(false) ) {
+                gravacaoService.startPausePlaying(false);
+                if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_PAUSED) {
                     startStop.setImageResource(play);
                 } else {
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)

@@ -14,14 +14,15 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.constraintlayout.widget.Group;
 
+import java.util.Arrays;
+import java.util.stream.Stream;
+
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.views.fragments.AnnotationsFragment;
 import br.ufabc.gravador.views.widgets.DottedSeekBar;
 
-public class OpenVideoActivity extends AbstractServiceActivity
-        implements AnnotationsFragment.AnnotationFragmentListener {
+public class OpenVideoActivity extends AbstractAnnotationsActivity {
 
     public final int play = R.drawable.ic_media_play, pause = R.drawable.ic_media_pause;
     private int recordDuration, playTime;
@@ -33,7 +34,6 @@ public class OpenVideoActivity extends AbstractServiceActivity
     private Group videoOverlay;
 
     private Gravacao gravacao = null;
-    private AnnotationsFragment fragment = null;
 
     @Override
     protected int getLayoutID() {
@@ -90,30 +90,23 @@ public class OpenVideoActivity extends AbstractServiceActivity
             return;
         } else gravacao = gravacaoService.getGravacao();
 
-        fragment.updateGravacao();
+        super.onServiceOnline();
 
         int serviceStatus = gravacaoService.getServiceStatus();
 
         startStop.setImageResource(serviceStatus == GravacaoService.STATUS_PLAYING ? pause : play);
         timeStamp.setText(Gravacao.formatTime(0));
-        progressBar.setDots(gravacao.getAnnotationTimes());
+        progressBar.setDots(
+                Stream.of(gravacao.getAnnotationTimes()).mapToInt((x) -> x.time).toArray());
         progressBar.setMax(recordDuration = (int) gravacaoService.getTimeTotal());
         progressBar.invalidate();
 
-        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
-            @Override
-            public void onTimeUpdate(long time) {
-                if (timeStamp != null)
-                    timeStamp.setText(Gravacao.formatTime(time));
-                if (progressBar != null)
-                    progressBar.setProgress((int) time);
-            }
+        gravacaoService.setTimeUpdateListener(time -> {
+            if (timeStamp != null)
+                timeStamp.setText(Gravacao.formatTime(time));
+            if (progressBar != null)
+                progressBar.setProgress((int) time);
         });
-    }
-
-    @Override
-    public void receiveFragment(AnnotationsFragment f) {
-        fragment = f;
     }
 
     public int getGravacaoTime() {
@@ -127,20 +120,21 @@ public class OpenVideoActivity extends AbstractServiceActivity
 
     void nextPrevOnClick(View view, boolean isNext) {
         if (!isBound) return;
-        playTime = gravacaoService.nextPrev(isNext);
-        timeUpdate(playTime);
-        fragment.jumpToTime(playTime);
+        Gravacao.AnnotationTime t = gravacaoService.nextPrev(isNext);
+        timeUpdate(playTime = t.time);
+        annotationsFragment.openAnnotation(playTime);
     }
 
     void startStopOnClick(View view) {
         if (!isBound) return;
         if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE) {
-            gravacaoService.setVideoSurface(new Surface(videoSurface.getSurfaceTexture()));
             gravacaoService.prepareForPlaying(GravacaoService.MEDIATYPE_VIDEO);
+            gravacaoService.setupPlayer(new Surface(videoSurface.getSurfaceTexture()), null);
         }
         switch (gravacaoService.getServiceStatus()) {
             case GravacaoService.STATUS_PAUSED:
-                if (gravacaoService.startPausePlaying(true)) {
+                gravacaoService.startPausePlaying(true);
+                if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_PLAYING) {
                     startStop.setImageResource(pause);
                 } else {
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)
@@ -148,7 +142,8 @@ public class OpenVideoActivity extends AbstractServiceActivity
                 }
                 break;
             case GravacaoService.STATUS_PLAYING:
-                if (gravacaoService.startPausePlaying(false)) {
+                gravacaoService.startPausePlaying(true);
+                if (gravacaoService.getServiceStatus() == GravacaoService.STATUS_PAUSED) {
                     startStop.setImageResource(play);
                 } else {
                     Toast.makeText(this, "Falha em iniciar reprodução", Toast.LENGTH_LONG)
@@ -161,7 +156,7 @@ public class OpenVideoActivity extends AbstractServiceActivity
     public void timeUpdate(int time) {
         playTime = time;
         progressBar.setProgress(playTime);
-        progressBar.setDots(gravacao.getAnnotationTimes());
+        progressBar.setDots(Arrays.stream(gravacao.getAnnotationTimes()).mapToInt(i -> i.time).toArray());
         timeStamp.setText(Gravacao.formatTime(playTime));
     }
 
@@ -194,15 +189,6 @@ public class OpenVideoActivity extends AbstractServiceActivity
             default:
                 return super.onOptionsItemSelected(item);
         }
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        fragment.alertSave(() -> {
-            gravacaoService.saveGravacao(null);
-        });
-        //TODO SALVAR MESMO??????
     }
 
     @Override

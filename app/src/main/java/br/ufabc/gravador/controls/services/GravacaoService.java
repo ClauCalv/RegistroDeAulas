@@ -74,6 +74,7 @@ public class GravacaoService extends Service {
         super.onCreate();
 
         bkgThread = new HandlerThread("bkg");
+        bkgThread.start();
         bkgHandler = new Handler(bkgThread.getLooper());
 
         nh = new NotificationHelper(this);
@@ -109,6 +110,22 @@ public class GravacaoService extends Service {
     public Gravacao createNewGravacao() {
         gravacao = gh.CreateEmpty(DirectoryHelper.newTempName());
         return gravacao;
+    }
+
+    public long getTime() {
+        return th.getTime();
+    }
+
+    public long getTimeTotal() {
+        return th.getTimeTotal();
+    }
+
+    public void setTimeTotal(long total) {
+        th.setTimeTotal(total);
+    }
+
+    public void setTimeUpdateListener(TimerHelper.TimeUpdateListener l) {
+        th.setTimeUpdateListener(l);
     }
 
     @Override
@@ -183,8 +200,22 @@ public class GravacaoService extends Service {
         registerPreviewSurface(null);
     }
 
-    public void startPreview() {
+    public void startPreviewing() {
         c2h.startPreviewing(currPreviewSurface);
+    }
+
+    public void stopPreviewing() {
+        c2h.stopCaptureSession();
+    }
+
+    public boolean isAudioOn() {
+        return useAudio;
+    }
+
+    public boolean toggleAudioOnOff() {
+        useAudio = !useAudio;
+        if (serviceStatus == STATUS_RECORDING) mh.setMicMuted(!useAudio);
+        return useAudio;
     }
 
     public boolean startRecording () {
@@ -195,7 +226,8 @@ public class GravacaoService extends Service {
 
         ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
         Surface recorderSurface = mh.prepareRecorder(cameraDim, isVideo, fd.getFileDescriptor());
-        c2h.startRecording(currPreviewSurface, recorderSurface);
+        mh.setMicMuted(!useAudio);
+        if (isVideo) c2h.startRecording(currPreviewSurface, recorderSurface);
         mh.startRecording();
 
         onRecordStarted();
@@ -212,6 +244,7 @@ public class GravacaoService extends Service {
 
     public void stopRecording () {
         mh.stopRecording();
+        mh.setMicMuted(false);
         c2h.stopCaptureSession();
         onRecordStopped();
     }
@@ -252,6 +285,8 @@ public class GravacaoService extends Service {
     }
 
     public boolean prepareForPlaying(int mediaType) {
+        ParcelFileDescriptor fd = dh.openFdFromString(gravacao.getRecordURI());
+        mh.prepareForPlaying(mediaType == MEDIATYPE_VIDEO, fd.getFileDescriptor());
         th.resetTimer();
         serviceStatus = STATUS_PAUSED;
 

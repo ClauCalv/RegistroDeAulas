@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -210,6 +211,7 @@ public class AnnotationsFragment extends Fragment {
 
         gravacao = activityListener.getGravacao();
         activityListener.receiveFragment(this);
+        Log.wtf("Frag", "send frag");
 
         adapter.notifyDataSetChanged();
         hasTextChanged = false;
@@ -275,6 +277,7 @@ public class AnnotationsFragment extends Fragment {
     }
 
     public void saveAnnotation() {
+        if (selectedID == -1) return;
         gravacao.setAnnotationName(selectedID, annotationName.getText().toString());
         gravacao.setAnnotationText(selectedID, annotationContent.getText().toString());
         adapter.notifyDataSetChanged();

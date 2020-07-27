@@ -84,6 +84,12 @@ public class Camera2Helper {
     }
 
     public CameraDimensions setupCamera(boolean facingFront, boolean requireSnapshots, CameraReadyCallback callback) {
+
+        if (mCameraDevice != null) {
+            mCameraDevice.close();
+            mCameraDevice = null;
+        }
+
         CameraManager cameraManager = (CameraManager) context.getSystemService(Context.CAMERA_SERVICE);
         try {
             for (String cameraId : cameraManager.getCameraIdList()) {
@@ -121,6 +127,7 @@ public class Camera2Helper {
                 cameraManager.openCamera(mCameraId, new CameraDevice.StateCallback() {
                     @Override
                     public void onOpened(@NonNull CameraDevice camera) {
+                        mCameraDevice = camera;
                         if (callback != null) callback.onCameraReady();
                     }
 
@@ -138,7 +145,7 @@ public class Camera2Helper {
                         mCameraDevice = null;
                     }
                 }, mBackgroundHandler);
-                return new CameraDimensions(rotatedHeight, rotatedWidth, mTotalRotation);
+                return new CameraDimensions(mVideoSize, mPreviewSize, mTotalRotation);
             }
         } catch (SecurityException | CameraAccessException e) {
             e.printStackTrace();
@@ -196,7 +203,7 @@ public class Camera2Helper {
 
                     @Override
                     public void onConfigureFailed(CameraCaptureSession session) {
-                        Log.d("startRecordSession", "onConfigureFailed");
+                        Log.e("startRecordSession", "onConfigureFailed");
                     }
                 }, null);
 
@@ -238,11 +245,12 @@ public class Camera2Helper {
     }
 
     public static class CameraDimensions {
-        public final int h, w, d;
+        public final Size vd, pv;
+        public final int d;
 
-        public CameraDimensions(int h, int w, int d) {
-            this.h = h;
-            this.w = w;
+        public CameraDimensions(Size vd, Size pv, int d) {
+            this.vd = vd;
+            this.pv = pv;
             this.d = d;
         }
     }

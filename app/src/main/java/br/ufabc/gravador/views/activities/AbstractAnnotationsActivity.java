@@ -5,6 +5,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.provider.MediaStore;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 
@@ -26,6 +27,7 @@ public abstract class AbstractAnnotationsActivity extends AbstractServiceActivit
 
     @Override
     public void receiveFragment(AnnotationsFragment f) {
+        Log.wtf("AbstractAnnotationsActivity", "FRAG RCV");
         annotationsFragment = f;
     }
 

@@ -15,10 +15,8 @@ import androidx.appcompat.app.AlertDialog;
 import br.ufabc.gravador.R;
 import br.ufabc.gravador.controls.services.GravacaoService;
 import br.ufabc.gravador.models.Gravacao;
-import br.ufabc.gravador.views.fragments.AnnotationsFragment;
 
-public class RecordAudioActivity extends AbstractServiceActivity
-        implements AnnotationsFragment.AnnotationFragmentListener {
+public class RecordAudioActivity extends AbstractAnnotationsActivity {
 
 
 
@@ -26,7 +24,6 @@ public class RecordAudioActivity extends AbstractServiceActivity
     private Button startStop;
     private TextView finishedLabel, recordTimeText;
     private Gravacao gravacao = null;
-    private AnnotationsFragment fragment = null;
 
     @Override
     protected int getLayoutID() {
@@ -53,16 +50,14 @@ public class RecordAudioActivity extends AbstractServiceActivity
         if ( !gravacaoService.hasGravacao() ) {
             gravacao = gravacaoService.createNewGravacao();
         } else gravacao = gravacaoService.getGravacao();
-        fragment.updateGravacao();
 
-        gravacaoService.setTimeUpdateListener(new GravacaoService.TimeUpdateListener() {
-            @Override
-            public void onTimeUpdate ( long time ) {
-                if ( recordTimeText != null )
-                    recordTimeText.setText(Gravacao.formatTime(time));
-            }
+        gravacaoService.setTimeUpdateListener(time -> {
+            if (recordTimeText != null)
+                recordTimeText.setText(Gravacao.formatTime(time));
         });
         updateState();
+
+        super.onServiceOnline();
     }
 
     private void updateState () {
@@ -84,11 +79,6 @@ public class RecordAudioActivity extends AbstractServiceActivity
     }
 
     @Override
-    public void receiveFragment ( AnnotationsFragment f ) {
-        fragment = f;
-    }
-
-    @Override
     public Gravacao getGravacao () { return gravacao; }
 
     @Override
@@ -100,7 +90,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
         if ( !isBound ) return;
 
         if ( gravacaoService.getServiceStatus() == GravacaoService.STATUS_IDLE )
-            gravacaoService.prepareForRecord(GravacaoService.MEDIATYPE_AUDIO);
+            gravacaoService.prepareGravacaoForRecord(GravacaoService.MEDIATYPE_AUDIO);
         switch ( gravacaoService.getServiceStatus() ) {
             case GravacaoService.STATUS_RECORD_PREPARED:
                 if ( !gravacaoService.startRecording() ) {
@@ -113,7 +103,7 @@ public class RecordAudioActivity extends AbstractServiceActivity
                 gravacaoService.stopRecording();
                 break;
             case GravacaoService.STATUS_WAITING_SAVE:
-                fragment.alertSave(this::onAnnotationSaved);
+                annotationsFragment.alertSave(this::onAnnotationSaved);
                 break;
         }
 
